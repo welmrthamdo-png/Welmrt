@@ -1,0 +1,2678 @@
+```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#D91E18" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Welmrt" />
+  <title>Welmrt - ويلمرت | سوبر ماركت أونلاين ذكي</title>
+
+  <!-- Google Fonts: Cairo (Arabic) & Inter (English) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandRed: '#D91E18',
+            brandRedDark: '#B31510',
+            brandGreen: '#2E8B57',
+            brandGreenDark: '#216B42',
+            brandYellow: '#F4C430',
+            brandYellowSoft: '#FEF9C3',
+          },
+          fontFamily: {
+            arabic: ['Cairo', 'sans-serif'],
+            english: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Firebase Compat SDK v10.12.2 (Safe non-module loading) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    html[dir="rtl"] body { font-family: 'Cairo', sans-serif; }
+    html[dir="ltr"] body { font-family: 'Inter', sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+    @media print {
+      body.print-invoice * { visibility: hidden; }
+      body.print-invoice #invoice-printable,
+      body.print-invoice #invoice-printable * { visibility: visible; }
+      body.print-invoice #invoice-printable {
+        position: absolute; inset: 0 auto auto 0; width: 100% !important;
+        max-width: 100% !important; margin: 0 !important; box-shadow: none !important;
+      }
+      body.print-invoice .no-print { display: none !important; }
+      body.print-qr * { visibility: hidden; }
+      body.print-qr #qr-printable,
+      body.print-qr #qr-printable * { visibility: visible; }
+      body.print-qr #qr-printable {
+        position: absolute; left: 50%; top: 24px; transform: translateX(-50%);
+        width: 360px !important; box-shadow: none !important;
+      }
+      body.print-qr .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased pb-28 md:pb-12 overflow-x-hidden">
+
+  <!-- ==================== STICKY HEADER ==================== -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <!-- Brand Logo (5 Rapid Taps -> Secret Admin Lock) -->
+        <button type="button" onclick="handleLogoTap()" class="flex items-center gap-2.5 shrink-0 text-start select-none focus:outline-none">
+          <div id="header-logo" class="w-11 h-11 sm:w-12 sm:h-12 transition-transform active:scale-95"></div>
+          <div class="leading-tight">
+            <h1 class="text-lg sm:text-xl font-black text-brandRed flex items-center gap-1.5">
+              <span>Welmrt</span><span class="text-slate-300 font-light">|</span><span>ويلمرت</span>
+            </h1>
+            <p id="header-tagline" class="text-[11px] sm:text-xs font-bold text-brandGreen">طازج يومياً • توصيل سريع لباب البيت</p>
+          </div>
+        </button>
+
+        <!-- Actions: Currency, Language, Cart -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button type="button" onclick="toggleCurrency()" class="px-2.5 py-2 sm:px-3.5 rounded-xl text-xs sm:text-sm font-extrabold border border-yellow-300 bg-brandYellowSoft text-slate-900 hover:bg-brandYellow transition">
+            <span id="currency-label">ل.س جديدة</span>
+          </button>
+          <button type="button" id="btn-lang" onclick="toggleLanguage()" class="px-2.5 py-2 sm:px-3.5 rounded-xl text-xs sm:text-sm font-extrabold border border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200 transition">
+            EN
+          </button>
+          <button type="button" onclick="openCartDrawer()" class="relative px-3 py-2 sm:px-4 rounded-xl bg-brandRed hover:bg-brandRedDark text-white font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md">
+            <span>🛒</span>
+            <span id="cart-btn-text" class="hidden sm:inline">السلة</span>
+            <span id="header-cart-badge" class="bg-brandYellow text-slate-900 font-black text-[11px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="mt-2.5 relative">
+        <input type="text" id="search-input" oninput="handleSearch(this.value)" class="w-full bg-slate-100 border border-slate-200 focus:bg-white focus:border-brandGreen rounded-xl py-2.5 ps-10 pe-10 text-sm outline-none transition" placeholder="ابحث عن زيت، رز، منظفات، شامبو..." />
+        <span class="absolute top-1/2 -translate-y-1/2 start-3 text-slate-400 pointer-events-none">🔍</span>
+        <button type="button" id="btn-clear-search" onclick="clearSearch()" class="hidden absolute top-1/2 -translate-y-1/2 end-3 text-slate-400 hover:text-brandRed font-black text-sm">✕</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN STOREFRONT ==================== -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 space-y-8">
+
+    <!-- 1. SPONSORED ADS CAROUSEL -->
+    <section id="sponsored-ads-section" class="hidden">
+      <div class="relative rounded-3xl overflow-hidden bg-slate-900 shadow-lg border border-slate-200">
+        <div id="sponsored-ad-stage" class="relative w-full h-44 sm:h-56 md:h-64 bg-slate-900 overflow-hidden"></div>
+        <div class="absolute top-3 start-3 z-20 pointer-events-none">
+          <span id="sponsored-badge-label" class="inline-flex items-center gap-1 bg-slate-900/75 text-brandYellow border border-white/20 text-[10px] sm:text-xs font-extrabold px-2.5 py-1 rounded-full">📢 إعلان ممول</span>
+        </div>
+        <button type="button" id="ad-mute-btn" onclick="event.stopPropagation(); toggleAdMute()" class="hidden absolute top-3 end-3 z-20 w-9 h-9 rounded-full bg-slate-900/75 text-white flex items-center justify-center text-sm">🔇</button>
+        <button type="button" id="ad-prev-btn" onclick="event.stopPropagation(); prevAdSlide()" class="hidden absolute top-1/2 -translate-y-1/2 start-2.5 z-20 w-9 h-9 rounded-full bg-white/85 text-slate-900 shadow-md flex items-center justify-center font-black text-lg">‹</button>
+        <button type="button" id="ad-next-btn" onclick="event.stopPropagation(); nextAdSlide()" class="hidden absolute top-1/2 -translate-y-1/2 end-2.5 z-20 w-9 h-9 rounded-full bg-white/85 text-slate-900 shadow-md flex items-center justify-center font-black text-lg">›</button>
+        <div id="ad-dots" class="hidden absolute bottom-2.5 inset-x-0 z-20 flex items-center justify-center gap-1.5"></div>
+      </div>
+    </section>
+
+    <!-- 2. HERO BANNER -->
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brandRed via-red-600 to-red-700 text-white p-5 sm:p-8 shadow-lg">
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div class="space-y-2.5 max-w-2xl">
+          <div class="inline-flex items-center gap-2 bg-white/15 border border-white/25 rounded-full px-3 py-1 text-xs font-bold text-brandYellow">
+            <span>⚡</span><span id="hero-badge">التسوق الذكي من بيتك بدون تعب</span>
+          </div>
+          <h2 id="hero-title" class="text-2xl sm:text-3xl md:text-4xl font-black leading-snug">مقاضي بيتك من ويلمرت.. بضغطة زر لباب البيت!</h2>
+          <p id="hero-subtitle" class="text-sm sm:text-base text-red-50/95 font-medium">أسعار شفافة بالليرة السورية الجديدة والدولار، سلات توفير، عروض يومية، وفاتورة رسمية فورية.</p>
+          <div class="flex flex-wrap items-center gap-2.5 pt-2">
+            <a href="#bundles-offers-section" class="px-4 py-2.5 rounded-xl bg-brandYellow hover:bg-yellow-300 text-slate-900 font-extrabold text-xs sm:text-sm shadow-md transition flex items-center gap-1.5">
+              <span>🎁</span><span id="hero-cta-bundles">السلات والعروض</span>
+            </a>
+            <a href="#quick-list-section" class="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold text-xs sm:text-sm transition flex items-center gap-1.5">
+              <span>📝</span><span id="hero-cta-quicklist">ورقة المقاضي</span>
+            </a>
+            <button type="button" onclick="openAIChat()" class="px-4 py-2.5 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center gap-1.5">
+              <span>🤖</span><span id="hero-cta-ai">اسأل مساعد ويلمرت</span>
+            </button>
+          </div>
+        </div>
+        <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 shrink-0 text-center sm:min-w-[220px]">
+          <p id="hero-rate-title" class="text-xs text-red-100 font-semibold">سعر الصرف المعتمد</p>
+          <p id="hero-rate-value" class="text-lg sm:text-xl font-black text-brandYellow mt-0.5">1$ = 150 ل.س جديدة</p>
+          <p id="hero-payment-note" class="text-[11px] text-white/90 mt-1 font-medium">الدفع نقداً عند الاستلام (ليرة أو دولار)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. DYNAMIC CATEGORIES BAR -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 id="categories-heading" class="text-lg sm:text-xl font-black text-slate-900">تصفح حسب الفئة 🗂️</h3>
+        <span id="categories-hint" class="text-xs font-bold text-slate-500">اختر الفئة لعرض منتجاتها فوراً</span>
+      </div>
+      <div id="category-cards-bar" class="flex items-stretch gap-2.5 overflow-x-auto no-scrollbar pb-2"></div>
+    </section>
+
+    <!-- 4. SMART BUNDLES & DAILY OFFERS -->
+    <section id="bundles-offers-section" class="scroll-mt-28 space-y-6">
+      <div id="bundles-wrapper" class="space-y-3">
+        <div>
+          <span id="bundles-kicker" class="text-xs font-extrabold text-brandGreen bg-green-100 px-2.5 py-1 rounded-full">وفّر وقتك ومصروفك</span>
+          <h3 id="bundles-heading" class="text-xl sm:text-2xl font-black text-slate-900 mt-1.5">السلات الذكية الجاهزة 🎁</h3>
+        </div>
+        <div id="bundles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+      </div>
+
+      <div id="offers-wrapper" class="space-y-3 hidden">
+        <div>
+          <span id="offers-kicker" class="text-xs font-extrabold text-brandRed bg-red-100 px-2.5 py-1 rounded-full">لفترة محدودة</span>
+          <h3 id="offers-heading" class="text-xl sm:text-2xl font-black text-slate-900 mt-1.5">عروض اليوم المميزة 🔥</h3>
+        </div>
+        <div id="offers-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"></div>
+      </div>
+    </section>
+
+    <!-- 5. PRODUCT CATALOG WITH PAGINATION -->
+    <section id="catalog-section" class="scroll-mt-28 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <h3 id="catalog-heading" class="text-xl sm:text-2xl font-black text-slate-900">منتجات السوبر ماركت 🛒</h3>
+          <span id="active-cat-badge" class="hidden text-xs font-extrabold bg-brandYellowSoft text-slate-900 border border-yellow-300 px-2.5 py-0.5 rounded-full"></span>
+        </div>
+        <span id="catalog-count" class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full"></span>
+      </div>
+
+      <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"></div>
+
+      <div id="pagination-bar" class="hidden text-center pt-2 space-y-2">
+        <p id="pagination-info" class="text-xs font-bold text-slate-500"></p>
+        <button type="button" onclick="loadMoreProducts()" id="btn-load-more" class="px-6 py-3 rounded-2xl bg-white hover:bg-slate-100 border-2 border-slate-200 text-slate-800 font-black text-xs sm:text-sm transition"></button>
+      </div>
+
+      <div id="empty-search" class="hidden text-center py-12 bg-white rounded-3xl border border-slate-200">
+        <div class="text-4xl mb-2">🔍</div>
+        <p id="empty-search-text" class="font-bold text-slate-700"></p>
+        <button type="button" onclick="resetCatalogFilters()" id="empty-search-btn" class="mt-3 px-5 py-2.5 rounded-xl bg-brandRed text-white text-xs font-extrabold"></button>
+      </div>
+    </section>
+
+    <!-- 6. QUICK GROCERY LIST -->
+    <section id="quick-list-section" class="scroll-mt-28">
+      <div class="rounded-3xl bg-gradient-to-br from-yellow-50 via-white to-green-50 border-2 border-brandYellow/80 p-5 sm:p-7">
+        <div class="flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
+          <div class="space-y-1.5 max-w-xl">
+            <div class="inline-flex items-center gap-1.5 bg-brandYellow text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full">
+              <span>📝</span><span id="ql-badge">للزبون المستعجل</span>
+            </div>
+            <h3 id="ql-title" class="text-xl sm:text-2xl font-black text-slate-900">ورقة المقاضي السريعة</h3>
+            <p id="ql-desc" class="text-xs sm:text-sm text-slate-600 font-medium">اكتب طلباتك الإضافية هون ومنضيفها لفاتورتك فوراً.</p>
+          </div>
+          <div class="w-full md:w-1/2 space-y-2.5">
+            <textarea id="quick-list-input" rows="3" class="w-full rounded-2xl border border-slate-300 bg-white p-3.5 text-sm focus:border-brandGreen outline-none resize-none" placeholder="مثلاً: ربطتين خبز، نص كيلو جبنة عكاوي..."></textarea>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span id="ql-status" class="text-xs font-bold text-brandGreen"></span>
+              <button type="button" onclick="attachQuickList()" class="px-5 py-2.5 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-xs sm:text-sm shadow-md transition">
+                ✓ <span id="ql-btn-text">إرفاق بالطلب</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="text-center text-xs text-slate-500 pt-4 pb-6 border-t border-slate-200">
+      <p id="footer-text" class="font-semibold">© 2026 سوبر ماركت Welmrt - ويلمرت. جميع الحقوق محفوظة.</p>
+    </footer>
+  </main>
+
+  <!-- ==================== MOBILE FLOATING CART BAR ==================== -->
+  <div id="mobile-cart-bar" class="fixed bottom-3 inset-x-3 z-30 md:hidden hidden">
+    <button type="button" onclick="openCartDrawer()" class="w-full bg-brandRed text-white rounded-2xl px-4 py-3.5 shadow-xl flex items-center justify-between font-bold">
+      <div class="flex items-center gap-2.5">
+        <span id="mobile-bar-count" class="bg-brandYellow text-slate-900 font-black text-xs px-2.5 py-1 rounded-xl">0</span>
+        <span id="mobile-bar-label" class="text-sm">عرض السلة</span>
+      </div>
+      <span id="mobile-bar-total" class="text-sm font-black text-brandYellow"></span>
+    </button>
+  </div>
+
+  <!-- ==================== FLOATING AI ASSISTANT ("ويلمرت") ==================== -->
+  <div class="fixed bottom-20 md:bottom-6 end-4 z-40 flex flex-col items-end gap-2">
+    <div id="ai-greeting-bubble" class="max-w-[240px] bg-white border-2 border-brandGreen/40 rounded-2xl rounded-ee-none p-3 shadow-xl text-xs font-bold text-slate-800 relative cursor-pointer" onclick="openAIChat()">
+      <button type="button" onclick="event.stopPropagation(); dismissAIGreeting()" class="absolute -top-2 -start-2 w-5 h-5 rounded-full bg-slate-200 hover:bg-brandRed hover:text-white text-slate-600 text-[10px] font-black flex items-center justify-center">✕</button>
+      <p id="ai-greeting-text" class="leading-relaxed"></p>
+    </div>
+    <button type="button" onclick="toggleAIChat()" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-brandRed to-red-700 text-white border-2 border-brandYellow shadow-xl flex items-center justify-center hover:scale-105 transition relative" aria-label="Welmrt AI">
+      <span class="text-2xl sm:text-3xl">🤖</span>
+      <span class="absolute -top-0.5 -end-0.5 w-4 h-4 bg-brandGreen border-2 border-white rounded-full"></span>
+    </button>
+  </div>
+
+  <!-- AI Chat Panel -->
+  <div id="ai-chat-panel" class="fixed bottom-4 end-3 sm:end-6 z-50 w-[calc(100vw-24px)] sm:w-[390px] max-h-[82vh] bg-white rounded-3xl shadow-2xl border border-slate-200 hidden flex-col overflow-hidden animate-fade-in">
+    <div class="bg-gradient-to-r from-brandRed to-red-700 text-white px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-full bg-white p-0.5 shrink-0" id="ai-header-logo"></div>
+        <div>
+          <h3 id="ai-panel-title" class="text-sm font-black leading-tight"></h3>
+          <p class="text-[11px] text-brandYellow font-bold flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-brandGreen inline-block"></span><span id="ai-panel-sub"></span>
+          </p>
+        </div>
+      </div>
+      <button type="button" onclick="closeAIChat()" class="p-2 rounded-xl hover:bg-white/15 font-black">✕</button>
+    </div>
+    <div id="ai-quick-prompts" class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar"></div>
+    <div id="ai-messages" class="flex-1 overflow-y-auto p-3.5 space-y-3 bg-slate-50/70 min-h-[240px] max-h-[45vh]"></div>
+    <form onsubmit="sendAIMessage(event)" class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+      <input type="text" id="ai-input" autocomplete="off" class="flex-1 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:border-brandGreen px-3.5 py-2.5 text-xs sm:text-sm outline-none" />
+      <button type="submit" class="px-4 py-2.5 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-xs sm:text-sm shrink-0"><span id="ai-send-label"></span></button>
+    </form>
+  </div>
+
+  <!-- ==================== CART & CHECKOUT DRAWER ==================== -->
+  <div id="cart-overlay" class="fixed inset-0 z-50 hidden">
+    <div onclick="closeCartDrawer()" class="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"></div>
+    <div class="absolute inset-y-0 end-0 w-full max-w-md bg-white shadow-2xl flex flex-col h-full animate-fade-in">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center gap-2"><span class="text-xl">🛒</span><h3 id="cart-drawer-title" class="text-lg font-black text-slate-900"></h3></div>
+        <button type="button" onclick="closeCartDrawer()" class="p-2 rounded-xl hover:bg-slate-200 text-slate-600 font-black">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-5">
+        <div id="cart-empty-state" class="text-center py-12 space-y-3 hidden">
+          <div class="text-5xl">🛍️</div>
+          <p id="cart-empty-text" class="font-bold text-slate-600 text-sm"></p>
+          <button type="button" onclick="closeCartDrawer()" id="cart-empty-btn" class="px-5 py-2.5 rounded-xl bg-brandGreen text-white text-sm font-bold"></button>
+        </div>
+
+        <div id="cart-content-wrapper" class="space-y-4">
+          <div id="cart-items-list" class="space-y-2.5"></div>
+
+          <div id="cart-quicklist-box" class="hidden rounded-2xl bg-yellow-50 border border-yellow-300 p-3.5">
+            <div class="flex items-center justify-between mb-1">
+              <span id="cart-ql-title" class="text-xs font-extrabold text-amber-800"></span>
+              <button type="button" onclick="clearQuickList()" class="text-xs font-bold text-brandRed hover:underline" id="cart-ql-remove"></button>
+            </div>
+            <p id="cart-ql-text" class="text-xs text-slate-700 whitespace-pre-line font-medium"></p>
+          </div>
+
+          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3.5 space-y-2">
+            <label id="lbl-promo-code" class="block text-xs font-extrabold text-slate-700"></label>
+            <div class="flex items-center gap-2">
+              <input type="text" id="promo-input" dir="ltr" class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-bold uppercase outline-none focus:border-brandGreen" placeholder="WELMRT10" />
+              <button type="button" onclick="applyPromoCode()" id="btn-apply-promo" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold"></button>
+            </div>
+            <div id="promo-applied-badge" class="hidden flex items-center justify-between bg-green-100 text-brandGreenDark px-3 py-1.5 rounded-xl text-xs font-extrabold">
+              <span id="promo-applied-text"></span>
+              <button type="button" onclick="removePromoCode()" class="text-brandRed font-black">✕</button>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
+            <div class="flex justify-between text-slate-600 font-semibold"><span id="summary-subtotal-label"></span><span id="summary-subtotal-val"></span></div>
+            <div id="summary-discount-row" class="hidden flex justify-between text-brandGreen font-bold"><span id="summary-discount-label"></span><span id="summary-discount-val"></span></div>
+            <div class="flex justify-between text-slate-600 font-semibold"><span id="summary-delivery-label"></span><span id="summary-delivery-val"></span></div>
+            <div class="border-t border-slate-200 pt-2 mt-2 flex justify-between items-center">
+              <span id="summary-total-label" class="font-black text-slate-900"></span>
+              <div class="text-end">
+                <div id="summary-total-syp" class="font-black text-base text-brandRed"></div>
+                <div id="summary-total-usd" class="font-bold text-xs text-brandGreen"></div>
+              </div>
+            </div>
+          </div>
+
+          <form id="checkout-form" onsubmit="submitOrder(event)" class="space-y-3.5 pt-1">
+            <h4 id="checkout-heading" class="text-sm font-black text-slate-900"></h4>
+            <div>
+              <label id="lbl-cust-name" class="block text-xs font-bold text-slate-700 mb-1"></label>
+              <input type="text" id="cust-name" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-brandGreen" />
+            </div>
+            <div>
+              <label id="lbl-cust-phone" class="block text-xs font-bold text-slate-700 mb-1"></label>
+              <input type="tel" id="cust-phone" required dir="ltr" placeholder="09XXXXXXXX" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-brandGreen" />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label id="lbl-cust-address" class="block text-xs font-bold text-slate-700"></label>
+                <button type="button" onclick="getCustomerGPS()" class="text-xs font-bold text-brandGreen bg-green-50 px-2.5 py-1 rounded-lg border border-green-200">📍 <span id="btn-gps-text"></span></button>
+              </div>
+              <textarea id="cust-address" rows="2" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm outline-none focus:border-brandGreen resize-none"></textarea>
+              <p id="gps-status-msg" class="text-[11px] font-bold text-brandGreen mt-1 hidden"></p>
+            </div>
+            <div class="space-y-2">
+              <label id="lbl-payment-method" class="block text-xs font-bold text-slate-700"></label>
+              <div class="grid grid-cols-1 gap-2">
+                <label class="cursor-pointer">
+                  <input type="radio" name="paymentCurrency" value="SYP" checked class="peer hidden" />
+                  <div class="rounded-xl border-2 border-slate-200 peer-checked:border-brandGreen peer-checked:bg-green-50/70 p-3 flex items-center justify-between">
+                    <div><p id="pay-syp-title" class="text-xs sm:text-sm font-extrabold text-slate-900"></p><p id="pay-syp-sub" class="text-[11px] text-slate-500 font-semibold"></p></div>
+                    <span id="pay-syp-amount" class="text-xs font-black text-brandGreen"></span>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="paymentCurrency" value="USD" class="peer hidden" />
+                  <div class="rounded-xl border-2 border-slate-200 peer-checked:border-brandGreen peer-checked:bg-green-50/70 p-3 flex items-center justify-between">
+                    <div><p id="pay-usd-title" class="text-xs sm:text-sm font-extrabold text-slate-900"></p><p id="pay-usd-sub" class="text-[11px] text-slate-500 font-semibold"></p></div>
+                    <span id="pay-usd-amount" class="text-xs font-black text-brandGreen"></span>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <button type="submit" class="w-full py-3.5 rounded-2xl bg-brandGreen hover:bg-brandGreenDark text-white font-black text-sm sm:text-base shadow-lg transition flex items-center justify-center gap-2">
+              <span>🧾</span><span id="btn-complete-order-text"></span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== OFFICIAL PRINTABLE INVOICE MODAL ==================== -->
+  <div id="invoice-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-900/60 backdrop-blur-xs p-3 sm:p-6">
+    <div class="min-h-full flex items-center justify-center">
+      <div id="invoice-printable" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-fade-in">
+        <div class="bg-brandRed text-white px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div id="invoice-logo" class="w-12 h-12 bg-white rounded-full p-0.5 shrink-0"></div>
+            <div><h3 class="text-lg font-black leading-tight">Welmrt | ويلمرت</h3><p id="inv-subtitle" class="text-xs text-red-100 font-semibold"></p></div>
+          </div>
+          <div class="text-end">
+            <span id="inv-badge-label" class="inline-block bg-brandYellow text-slate-900 text-[11px] font-black px-2.5 py-0.5 rounded-full"></span>
+            <p id="inv-order-number" class="text-xs font-mono font-bold mt-1" dir="ltr"></p>
+          </div>
+        </div>
+        <div class="p-5 sm:p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-3 bg-slate-50 rounded-2xl p-3.5 text-xs border border-slate-200">
+            <div><p id="inv-lbl-date" class="text-slate-400 font-bold"></p><p id="inv-val-date" class="font-extrabold text-slate-800 mt-0.5"></p></div>
+            <div><p id="inv-lbl-customer" class="text-slate-400 font-bold"></p><p id="inv-val-customer" class="font-extrabold text-slate-800 mt-0.5"></p></div>
+            <div><p id="inv-lbl-phone" class="text-slate-400 font-bold"></p><p id="inv-val-phone" class="font-extrabold text-slate-800 mt-0.5" dir="ltr"></p></div>
+            <div><p id="inv-lbl-address" class="text-slate-400 font-bold"></p><p id="inv-val-address" class="font-extrabold text-slate-800 mt-0.5"></p><a id="inv-val-gps" href="#" target="_blank" class="hidden text-brandGreen underline font-bold mt-0.5 inline-block"></a></div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse">
+              <thead>
+                <tr class="border-b-2 border-slate-200 text-slate-500">
+                  <th id="inv-th-item" class="py-2 text-start font-extrabold"></th>
+                  <th id="inv-th-qty" class="py-2 text-center font-extrabold"></th>
+                  <th id="inv-th-price" class="py-2 text-end font-extrabold"></th>
+                  <th id="inv-th-total" class="py-2 text-end font-extrabold"></th>
+                </tr>
+              </thead>
+              <tbody id="inv-items-tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="inv-quicklist-wrap" class="hidden rounded-xl bg-yellow-50 border border-yellow-300 p-3 text-xs">
+            <p id="inv-ql-title" class="font-extrabold text-amber-800 mb-1"></p>
+            <p id="inv-ql-content" class="text-slate-700 whitespace-pre-line font-semibold"></p>
+          </div>
+          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-xs sm:text-sm">
+            <div class="flex justify-between text-slate-600 font-semibold"><span id="inv-lbl-subtotal"></span><span id="inv-val-subtotal"></span></div>
+            <div id="inv-discount-row" class="hidden flex justify-between text-brandGreen font-bold"><span id="inv-lbl-discount"></span><span id="inv-val-discount"></span></div>
+            <div class="flex justify-between text-slate-600 font-semibold"><span id="inv-lbl-delivery"></span><span id="inv-val-delivery"></span></div>
+            <div class="border-t-2 border-dashed border-slate-300 pt-2.5 mt-2 flex justify-between items-center">
+              <span id="inv-lbl-grandtotal" class="font-black text-slate-900"></span>
+              <div class="text-end">
+                <p id="inv-val-total-syp" class="text-base sm:text-lg font-black text-brandRed"></p>
+                <p id="inv-val-total-usd" class="text-xs font-extrabold text-brandGreen"></p>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-green-50 border-2 border-brandGreen/40 p-3 text-center">
+            <p id="inv-lbl-paymethod" class="text-[11px] font-bold text-slate-500"></p>
+            <p id="inv-val-paymethod" class="text-sm font-black text-brandGreen mt-0.5"></p>
+          </div>
+          <div class="no-print space-y-2.5 pt-2">
+            <button type="button" onclick="sendOrderViaWhatsApp()" class="w-full py-3.5 rounded-2xl bg-brandGreen hover:bg-brandGreenDark text-white font-black text-sm shadow-lg transition flex items-center justify-center gap-2">
+              <span>💬</span><span id="inv-btn-whatsapp"></span>
+            </button>
+            <div class="grid grid-cols-2 gap-2.5">
+              <button type="button" onclick="printInvoice()" class="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm">🖨️ <span id="inv-btn-print"></span></button>
+              <button type="button" onclick="startNewOrder()" class="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm">🔄 <span id="inv-btn-new"></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SECRET PIN LOCK MODAL (NO HINT TEXT) ==================== -->
+  <div id="pin-modal" class="fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-6 text-center space-y-4 animate-fade-in">
+      <div class="w-14 h-14 mx-auto" id="pin-logo"></div>
+      <div class="flex items-center justify-center">
+        <span class="w-11 h-11 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xl">🔒</span>
+      </div>
+      <form onsubmit="verifyAdminPin(event)" class="space-y-3">
+        <input type="password" id="pin-input" inputmode="numeric" maxlength="8" dir="ltr" autocomplete="off" class="w-full text-center text-2xl tracking-[0.45em] font-black rounded-2xl border-2 border-slate-200 focus:border-brandRed py-3 outline-none" required />
+        <p id="pin-error" class="text-xs font-bold text-brandRed hidden"></p>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="closePinModal()" id="pin-cancel-btn" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"></button>
+          <button type="submit" id="pin-submit-btn" class="py-2.5 rounded-xl bg-brandRed hover:bg-brandRedDark text-white font-extrabold text-xs"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== SECRET ADMIN PANEL (6 TABS) ==================== -->
+  <div id="admin-modal" class="fixed inset-0 z-50 hidden bg-slate-100 overflow-y-auto">
+    <!-- Admin Top Header -->
+    <div class="sticky top-0 z-20 bg-slate-900 text-white px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-md">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-white rounded-full p-0.5" id="admin-header-logo"></div>
+        <div>
+          <h2 id="admin-title" class="text-sm sm:text-base font-black leading-tight"></h2>
+          <div class="flex flex-wrap items-center gap-2 mt-0.5">
+            <p id="admin-subtitle" class="text-[11px] text-slate-400 font-medium hidden sm:block"></p>
+            <span id="cloud-status-badge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">وضع محلي 🟡</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" onclick="closeAdminModal()" id="admin-close-btn" class="px-4 py-2 rounded-xl bg-brandRed hover:bg-brandRedDark text-white font-extrabold text-xs sm:text-sm"></button>
+    </div>
+
+    <!-- Admin Tabs Navigation -->
+    <div class="bg-white border-b border-slate-200 sticky top-[60px] z-10 overflow-x-auto no-scrollbar">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 flex items-center gap-1">
+        <button type="button" id="tab-btn-dashboard" onclick="switchAdminTab('dashboard')" class="shrink-0 px-4 py-3 text-xs sm:text-sm font-extrabold border-b-2 border-brandRed text-brandRed"></button>
+        <button type="button" id="tab-btn-products" onclick="switchAdminTab('products')" class="shrink-0 px-4 py-3 text-xs sm:text-sm font-extrabold border-b-2 border-transparent text-slate-500"></button>
+        <button type="button" id="tab-btn-categories" onclick="switchAdminTab('categories')" class="shrink-0 px-4 py-3 text-xs sm:text-sm font-extrabold border-b-2 border-transparent text-slate-500"></button>
+        <button type="button" id="tab-btn-bundles" onclick="switchAdminTab('bundles')" class="shrink-0 px-4 py-3 text-xs sm:text-sm font-extrabold border-b-2 border-transparent text-slate-500"></button>
+        <button type="button" id="tab-btn-ads" onclick="switchAdminTab('ads')" class="shrink-0 px-4 py-3 text-xs sm:text-sm font-extrabold border-b-2 border-transparent text-slate-500"></button>
+        <button type="button" id="tab-btn-settings" onclick="switchAdminTab('settings')" class="shrink-0 px-4 py-3 text-xs sm:text-sm font-extrabold border-b-2 border-transparent text-slate-500"></button>
+      </div>
+    </div>
+
+    <!-- Admin Body -->
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+
+      <!-- TAB 1: DASHBOARD -->
+      <div id="admin-tab-dashboard" class="space-y-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs">
+            <p id="stat-lbl-orders" class="text-xs font-bold text-slate-500"></p>
+            <p id="stat-val-orders" class="text-2xl font-black text-slate-900 mt-1">0</p>
+          </div>
+          <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs">
+            <p id="stat-lbl-revenue" class="text-xs font-bold text-slate-500"></p>
+            <p id="stat-val-rev-syp" class="text-lg font-black text-brandRed mt-1">0</p>
+            <p id="stat-val-rev-usd" class="text-xs font-bold text-slate-400">$0.00</p>
+          </div>
+          <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs">
+            <p id="stat-lbl-cost" class="text-xs font-bold text-slate-500"></p>
+            <p id="stat-val-cost-syp" class="text-lg font-black text-slate-700 mt-1">0</p>
+            <p id="stat-val-cost-usd" class="text-xs font-bold text-slate-400">$0.00</p>
+          </div>
+          <div class="bg-green-50 rounded-3xl border-2 border-brandGreen/40 p-4 shadow-xs">
+            <p id="stat-lbl-profit" class="text-xs font-extrabold text-brandGreenDark"></p>
+            <p id="stat-val-profit-syp" class="text-lg font-black text-brandGreen mt-1">0</p>
+            <p id="stat-val-profit-usd" class="text-xs font-extrabold text-brandGreenDark">$0.00</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 id="alert-lowstock-title" class="text-sm sm:text-base font-black text-slate-900"></h3>
+              <span id="alert-lowstock-count" class="bg-red-100 text-brandRed text-xs font-black px-2.5 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="lowstock-list" class="space-y-2"></div>
+          </div>
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 id="alert-expiry-title" class="text-sm sm:text-base font-black text-slate-900"></h3>
+              <span id="alert-expiry-count" class="bg-amber-100 text-amber-800 text-xs font-black px-2.5 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="expiry-list" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: PRODUCTS & BARCODE -->
+      <div id="admin-tab-products" class="hidden space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 id="prod-form-heading" class="text-base sm:text-lg font-black text-slate-900"></h3>
+            <button type="button" onclick="resetProductForm()" id="btn-reset-prod-form" class="text-xs font-bold text-slate-500 hover:text-brandRed underline"></button>
+          </div>
+
+          <div class="rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 p-4 space-y-3">
+            <label id="lbl-barcode" class="block text-xs font-extrabold text-slate-800"></label>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="text" id="p-barcode" dir="ltr" oninput="checkBarcodeMatch(this.value)" class="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-mono font-bold outline-none focus:border-brandGreen" placeholder="6211001" />
+              <button type="button" onclick="openBarcodeScanner()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2">
+                <span>📷</span><span id="btn-scan-barcode-text"></span>
+              </button>
+            </div>
+            <div id="barcode-match-banner" class="hidden rounded-2xl bg-green-50 border-2 border-brandGreen p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <span id="match-badge-text" class="inline-block bg-brandGreen text-white text-[11px] font-black px-2.5 py-0.5 rounded-full"></span>
+                  <h4 id="match-prod-name" class="text-sm sm:text-base font-black text-slate-900 mt-1"></h4>
+                  <p id="match-prod-stock" class="text-xs font-bold text-brandGreenDark"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="number" id="quick-restock-qty" min="1" value="10" class="w-24 rounded-xl border-2 border-brandGreen bg-white px-3 py-2 text-center font-black text-sm outline-none" />
+                  <button type="button" onclick="executeQuickRestock()" id="btn-quick-restock" class="px-4 py-2.5 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-xs sm:text-sm"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form id="product-admin-form" onsubmit="saveProductFromForm(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <input type="hidden" id="p-edit-id" value="" />
+            <div><label id="lbl-p-name-ar" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="p-name-ar" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+            <div><label id="lbl-p-name-en" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="p-name-en" required dir="ltr" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+            <div><label id="lbl-p-cat" class="block text-xs font-bold text-slate-700 mb-1"></label><select id="p-cat" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-brandGreen"></select></div>
+            <div><label id="lbl-p-unit" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="p-unit" placeholder="1 لتر / 500غ" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+            <div><label id="lbl-p-stock" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="number" id="p-stock" min="0" required value="20" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold outline-none focus:border-brandGreen" /></div>
+            <div class="flex flex-col justify-end">
+              <label id="lbl-p-currency" class="block text-xs font-bold text-slate-700 mb-1"></label>
+              <label class="flex items-center justify-between rounded-xl border border-yellow-300 bg-brandYellowSoft px-3.5 py-2.5 cursor-pointer">
+                <span id="lbl-usd-shield-toggle" class="text-xs font-extrabold text-slate-900"></span>
+                <input type="checkbox" id="p-usd-shield" checked class="w-5 h-5 accent-brandGreen rounded" />
+              </label>
+            </div>
+            <div><label id="lbl-p-cost" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="number" id="p-cost" min="0" step="0.01" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold outline-none focus:border-brandGreen" /></div>
+            <div><label id="lbl-p-price" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="number" id="p-price" min="0.01" step="0.01" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold outline-none focus:border-brandGreen" /></div>
+            <div><label id="lbl-p-expiry" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="date" id="p-expiry" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+            <div class="sm:col-span-2 lg:col-span-3">
+              <label id="lbl-p-image" class="block text-xs font-bold text-slate-700 mb-1"></label>
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="cursor-pointer px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
+                  <span>📸</span><span id="lbl-upload-photo"></span>
+                  <input type="file" id="p-image-file" accept="image/*" capture="environment" class="hidden" onchange="handleProductPhotoUpload(event)" />
+                </label>
+                <input type="url" id="p-image-url" dir="ltr" placeholder="https://..." class="flex-1 min-w-[180px] rounded-xl border border-slate-300 px-3 py-2.5 text-xs outline-none focus:border-brandGreen" />
+                <img id="p-image-preview" src="" alt="" class="hidden w-11 h-11 rounded-xl object-cover border border-slate-300" />
+              </div>
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3 flex justify-end pt-1">
+              <button type="submit" id="btn-save-product" class="px-6 py-3 rounded-2xl bg-brandRed hover:bg-brandRedDark text-white font-black text-sm shadow-md"></button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+          <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2"><h3 id="inv-table-heading" class="text-sm sm:text-base font-black text-slate-900"></h3><span id="inv-table-count" class="text-xs font-bold text-slate-500"></span></div>
+            <input type="text" id="admin-prod-search" oninput="renderAdminProductsTable()" class="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs outline-none w-full sm:w-64" />
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                <tr>
+                  <th id="th-adm-prod" class="p-3 text-start font-extrabold"></th>
+                  <th id="th-adm-cat" class="p-3 text-center font-extrabold"></th>
+                  <th id="th-adm-barcode" class="p-3 text-center font-extrabold"></th>
+                  <th id="th-adm-stock" class="p-3 text-center font-extrabold"></th>
+                  <th id="th-adm-price" class="p-3 text-center font-extrabold"></th>
+                  <th id="th-adm-actions" class="p-3 text-center font-extrabold"></th>
+                </tr>
+              </thead>
+              <tbody id="admin-products-tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: CATEGORIES MANAGER -->
+      <div id="admin-tab-categories" class="hidden space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 id="cat-form-title" class="text-base sm:text-lg font-black text-slate-900"></h3>
+            <button type="button" onclick="resetCategoryForm()" id="btn-reset-cat-form" class="text-xs font-bold text-slate-500 hover:text-brandRed underline"></button>
+          </div>
+          <form id="category-admin-form" onsubmit="saveCategoryFromForm(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+            <input type="hidden" id="cat-edit-id" value="" />
+            <div><label id="lbl-cat-ar" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="cat-ar" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+            <div><label id="lbl-cat-en" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="cat-en" required dir="ltr" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+            <div><label id="lbl-cat-icon" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="cat-icon" required value="🛒" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-center outline-none focus:border-brandGreen" /></div>
+            <button type="submit" id="btn-save-cat" class="py-2.5 px-5 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-sm"></button>
+          </form>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-3">
+          <h3 id="cat-list-title" class="text-base font-black text-slate-900"></h3>
+          <div id="admin-categories-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        </div>
+      </div>
+
+      <!-- TAB 4: BUNDLES & OFFERS MANAGER -->
+      <div id="admin-tab-bundles" class="hidden space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 id="bundle-form-title" class="text-base sm:text-lg font-black text-slate-900"></h3>
+            <button type="button" onclick="resetBundleForm()" id="btn-reset-bundle-form" class="text-xs font-bold text-slate-500 hover:text-brandRed underline"></button>
+          </div>
+          <form id="bundle-admin-form" onsubmit="saveBundleFromForm(event)" class="space-y-4">
+            <input type="hidden" id="b-edit-id" value="" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div><label id="lbl-b-name-ar" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="b-name-ar" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+              <div><label id="lbl-b-name-en" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="b-name-en" required dir="ltr" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+              <div><label id="lbl-b-price-usd" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="number" id="b-price-usd" required min="0.5" step="0.1" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-black outline-none focus:border-brandGreen" /></div>
+              <div><label id="lbl-b-emoji" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="b-emoji" value="🎁" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-center outline-none focus:border-brandGreen" /></div>
+            </div>
+            <div>
+              <label id="lbl-b-select-prods" class="block text-xs font-extrabold text-slate-700 mb-2"></label>
+              <div id="bundle-product-checkboxes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-52 overflow-y-auto p-3 rounded-2xl bg-slate-50 border border-slate-200"></div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="b-active" checked class="w-4 h-4 accent-brandGreen" /><span id="lbl-b-active" class="text-xs font-extrabold text-slate-700"></span></label>
+              <button type="submit" id="btn-save-bundle" class="px-6 py-2.5 rounded-xl bg-brandRed hover:bg-brandRedDark text-white font-black text-sm"></button>
+            </div>
+          </form>
+          <div class="pt-2 border-t border-slate-200 space-y-2.5">
+            <h4 id="bundle-list-title" class="text-sm font-black text-slate-800"></h4>
+            <div id="admin-bundles-list" class="space-y-2.5"></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+          <h3 id="offer-form-title" class="text-base sm:text-lg font-black text-slate-900"></h3>
+          <form onsubmit="applyProductOffer(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div><label id="lbl-offer-prod" class="block text-xs font-bold text-slate-700 mb-1"></label><select id="offer-prod-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-brandGreen"></select></div>
+            <div><label id="lbl-offer-pct" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="number" id="offer-pct-input" required min="5" max="85" value="20" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-black outline-none focus:border-brandGreen" /></div>
+            <button type="submit" id="btn-apply-offer" class="py-2.5 px-5 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-sm"></button>
+          </form>
+          <div class="pt-2 border-t border-slate-200 space-y-2.5">
+            <h4 id="offer-list-title" class="text-sm font-black text-slate-800"></h4>
+            <div id="admin-offers-list" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: SPONSORED ADS -->
+      <div id="admin-tab-ads" class="hidden space-y-5">
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+          <h3 id="ad-form-title" class="text-base sm:text-lg font-black text-slate-900"></h3>
+          <form id="ad-admin-form" onsubmit="createSponsoredAd(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label id="lbl-ad-advertiser" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="ad-advertiser" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-brandGreen" /></div>
+            <div>
+              <label id="lbl-ad-type" class="block text-xs font-bold text-slate-700 mb-1"></label>
+              <select id="ad-type" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold outline-none focus:border-brandGreen">
+                <option value="image">🖼️ صورة (Image)</option>
+                <option value="video">🎬 فيديو (Video MP4/WebM)</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label id="lbl-ad-media" class="block text-xs font-bold text-slate-700 mb-1"></label>
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="cursor-pointer px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
+                  <span>📁</span><span id="lbl-ad-upload"></span>
+                  <input type="file" id="ad-file-input" accept="image/*,video/*" class="hidden" onchange="handleAdFileUpload(event)" />
+                </label>
+                <input type="url" id="ad-media-url" dir="ltr" placeholder="https://..." class="flex-1 min-w-[200px] rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs outline-none focus:border-brandGreen" />
+              </div>
+              <p id="ad-upload-status" class="text-[11px] font-bold text-brandGreen mt-1.5 hidden"></p>
+            </div>
+            <div class="sm:col-span-2">
+              <label id="lbl-ad-link" class="block text-xs font-bold text-slate-700 mb-1"></label>
+              <input type="url" id="ad-target-url" dir="ltr" placeholder="https://example.com" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-brandGreen" />
+            </div>
+            <div class="sm:col-span-2 flex justify-end">
+              <button type="submit" id="btn-save-ad" class="px-6 py-3 rounded-2xl bg-brandRed hover:bg-brandRedDark text-white font-black text-sm shadow-md"></button>
+            </div>
+          </form>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-3">
+          <div class="flex items-center justify-between"><h3 id="ad-list-title" class="text-base font-black text-slate-900"></h3><span id="ad-list-count" class="text-xs font-bold text-slate-500"></span></div>
+          <div id="admin-ads-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- TAB 6: SETTINGS, PROMO CODES & QR CARD -->
+      <div id="admin-tab-settings" class="hidden space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+          <h3 id="settings-heading" class="text-base sm:text-lg font-black text-slate-900"></h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <label id="adm-lbl-rate" class="block text-xs font-extrabold text-slate-700 mb-1.5"></label>
+              <input type="number" id="adm-rate" min="1" step="1" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black outline-none" />
+              <p id="adm-hint-rate" class="text-[11px] text-slate-500 mt-1"></p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <label id="adm-lbl-delivery" class="block text-xs font-extrabold text-slate-700 mb-1.5"></label>
+              <input type="number" id="adm-delivery" min="0" step="10" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black outline-none" />
+              <p id="adm-hint-delivery" class="text-[11px] text-slate-500 mt-1"></p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <label id="adm-lbl-whatsapp" class="block text-xs font-extrabold text-slate-700 mb-1.5"></label>
+              <input type="text" id="adm-whatsapp" dir="ltr" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black outline-none" />
+              <p id="adm-hint-whatsapp" class="text-[11px] text-slate-500 mt-1"></p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <label id="adm-lbl-pin" class="block text-xs font-extrabold text-slate-700 mb-1.5"></label>
+              <input type="text" id="adm-pin" dir="ltr" maxlength="8" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black outline-none" />
+              <p id="adm-hint-pin" class="text-[11px] text-slate-500 mt-1"></p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <button type="button" onclick="confirmResetDemoData()" id="adm-btn-reset" class="px-4 py-2.5 rounded-xl bg-red-50 hover:bg-brandRed hover:text-white text-brandRed font-extrabold text-xs"></button>
+            <button type="button" onclick="saveAdminSettings()" id="adm-btn-save" class="px-6 py-3 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-sm shadow-md"></button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+          <h3 id="promo-create-title" class="text-base font-black text-slate-900"></h3>
+          <form onsubmit="createPromoCode(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div><label id="lbl-new-promo-code" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="text" id="new-promo-code" required dir="ltr" placeholder="RAMADAN15" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-black uppercase outline-none" /></div>
+            <div><label id="lbl-new-promo-pct" class="block text-xs font-bold text-slate-700 mb-1"></label><input type="number" id="new-promo-pct" required min="1" max="80" value="10" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-black outline-none" /></div>
+            <button type="submit" id="btn-create-promo" class="py-2.5 px-5 rounded-xl bg-brandGreen hover:bg-brandGreenDark text-white font-extrabold text-sm"></button>
+          </form>
+          <div id="admin-promos-list" class="space-y-2 pt-2"></div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-col items-center space-y-4">
+          <div id="qr-printable" class="w-full max-w-sm bg-white rounded-3xl border-4 border-brandRed p-6 text-center shadow-lg space-y-4">
+            <div id="qr-card-logo" class="w-20 h-20 mx-auto"></div>
+            <div><h4 class="text-2xl font-black text-brandRed">Welmrt | ويلمرت</h4><p id="qr-card-sub" class="text-xs font-bold text-brandGreen mt-0.5"></p></div>
+            <div class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-brandYellow inline-block">
+              <div id="qr-svg-container" class="w-44 h-44 mx-auto"></div>
+            </div>
+            <div class="bg-brandYellowSoft border border-brandYellow rounded-2xl p-3">
+              <p id="qr-tagline" class="text-sm font-black text-slate-900 leading-snug"></p>
+            </div>
+            <p id="qr-footer-note" class="text-[11px] font-bold text-slate-500"></p>
+          </div>
+          <button type="button" onclick="printQRCard()" class="no-print px-6 py-2.5 rounded-xl bg-brandRed hover:bg-brandRedDark text-white font-extrabold text-sm shadow-md">🖨️ <span id="qr-print-btn"></span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CAMERA BARCODE SCANNER MODAL ==================== -->
+  <div id="scanner-modal" class="fixed inset-0 z-[60] hidden bg-slate-900/80 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+      <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+        <span id="scanner-title" class="text-sm font-black"></span>
+        <button type="button" onclick="closeBarcodeScanner()" class="p-1.5 rounded-lg hover:bg-white/15">✕</button>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center">
+          <video id="scanner-video" class="w-full h-full object-cover" autoplay playsinline muted></video>
+          <div class="absolute inset-6 border-2 border-brandYellow/80 rounded-xl pointer-events-none"></div>
+          <div class="absolute inset-x-8 top-1/2 h-0.5 bg-brandRed pointer-events-none"></div>
+        </div>
+        <p id="scanner-status" class="text-xs font-bold text-center text-slate-600"></p>
+        <div class="flex gap-2">
+          <input type="text" id="scanner-manual-input" dir="ltr" class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono font-bold outline-none" placeholder="6211001" />
+          <button type="button" onclick="applyManualScannedBarcode()" id="scanner-manual-btn" class="px-4 py-2 rounded-xl bg-brandGreen text-white text-xs font-extrabold"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CUSTOM CONFIRMATION MODAL ==================== -->
+  <div id="confirm-modal" class="fixed inset-0 z-[70] hidden bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-3xl p-5 text-center space-y-4 shadow-2xl">
+      <div class="text-3xl">⚠️</div>
+      <p id="confirm-message" class="text-sm font-bold text-slate-800"></p>
+      <div class="grid grid-cols-2 gap-2.5">
+        <button type="button" onclick="resolveConfirm(false)" id="confirm-no-btn" class="py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs"></button>
+        <button type="button" onclick="resolveConfirm(true)" id="confirm-yes-btn" class="py-2.5 rounded-xl bg-brandRed text-white font-extrabold text-xs"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST CONTAINER ==================== -->
+  <div id="toast-container" class="fixed top-20 inset-x-0 z-[80] flex justify-center pointer-events-none px-4"></div>
+
+  <!-- ==================== CORE APPLICATION SCRIPT (NON-MODULE) ==================== -->
+  <script>
+    /* 1. FIREBASE COMPAT INITIALIZATION (SAFE TRY/CATCH) */
+    const firebaseConfig = {
+      apiKey: "AIzaSyBQ80NkshIcmcjb7h8V_DnIYlAeU5LAHBE",
+      authDomain: "welmrt-store.firebaseapp.com",
+      projectId: "welmrt-store",
+      storageBucket: "welmrt-store.firebasestorage.app",
+      messagingSenderId: "440837097009",
+      appId: "1:440837097009:web:74c8a274e872e54ae0b710"
+    };
+
+    let db = null;
+    let isCloudConnected = false;
+
+    try {
+      if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+      }
+    } catch (err) {
+      console.warn('Firebase fallback to local mode:', err);
+    }
+
+    function updateCloudBadge(connected) {
+      isCloudConnected = connected;
+      const badge = document.getElementById('cloud-status-badge');
+      if (!badge) return;
+      if (connected) {
+        badge.textContent = state.lang === 'ar' ? 'متصل بالسحابة 🟢' : 'Cloud Connected 🟢';
+        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+      } else {
+        badge.textContent = state.lang === 'ar' ? 'وضع محلي 🟡' : 'Local Mode 🟡';
+        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30';
+      }
+    }
+
+    /* 2. INLINE SVG LOGO */
+    function getWelmrtLogoSVG() {
+      return '<svg viewBox="0 0 200 200" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">' +
+        '<circle cx="100" cy="100" r="92" fill="#FFFFFF" stroke="#D91E18" stroke-width="10"/>' +
+        '<path d="M96 76 C84 52, 86 32, 100 22 C110 38, 110 58, 96 76 Z" fill="#2E8B57"/>' +
+        '<path d="M102 78 C108 54, 122 40, 138 38 C134 56, 120 72, 102 78 Z" fill="#22C55E"/>' +
+        '<path d="M56 54 C64 52, 70 55, 74 64 L84 94 L100 76 L116 94 L132 68 C136 62, 144 64, 140 72 L120 104 C117 109, 111 109, 107 104 L100 94 L93 104 C89 109, 82 108, 79 102 L66 66 C64 62, 60 61, 55 62 C51 62, 51 55, 56 54 Z" fill="#F4C430"/>' +
+        '<circle cx="88" cy="114" r="6.5" fill="#FFFFFF" stroke="#D91E18" stroke-width="3.5"/>' +
+        '<circle cx="114" cy="114" r="6.5" fill="#FFFFFF" stroke="#D91E18" stroke-width="3.5"/>' +
+        '<text x="100" y="142" text-anchor="middle" fill="#D91E18" font-family="Georgia, serif" font-style="italic" font-weight="900" font-size="34">Welmrt</text>' +
+        '<text x="100" y="166" text-anchor="middle" fill="#D91E18" font-family="Cairo, sans-serif" font-weight="900" font-size="24">ويلمرت</text>' +
+        '<path d="M56 177 Q100 165 144 177 Q100 172 56 177 Z" fill="#2E8B57"/>' +
+      '</svg>';
+    }
+
+    /* 3. BILINGUAL DICTIONARY */
+    const I18N = {
+      ar: {
+        tagline: 'طازج يومياً • توصيل سريع لباب البيت',
+        cartBtn: 'السلة',
+        searchPlaceholder: 'ابحث عن زيت، رز، منظفات، شامبو، أجبان، شوكولا...',
+        currencySYP: 'ل.س جديدة',
+        currencyUSD: '$ USD',
+        heroBadge: 'التسوق الذكي من بيتك بدون تعب',
+        heroTitle: 'مقاضي بيتك من ويلمرت.. بضغطة زر لباب البيت!',
+        heroSubtitle: 'أسعار شفافة بالليرة السورية الجديدة والدولار، سلات توفير، عروض يومية، وفاتورة رسمية فورية.',
+        heroCtaBundles: 'السلات والعروض',
+        heroCtaQuicklist: 'ورقة المقاضي',
+        heroCtaAI: 'اسأل مساعد ويلمرت',
+        heroRateTitle: 'سعر الصرف المعتمد',
+        heroPaymentNote: 'الدفع نقداً عند الاستلام (ليرة أو دولار)',
+        categoriesHeading: 'تصفح حسب الفئة 🗂️',
+        categoriesHint: 'اختر الفئة لعرض منتجاتها فوراً',
+        allCategories: 'الكل',
+        bundlesKicker: 'وفّر وقتك ومصروفك',
+        bundlesHeading: 'السلات الذكية الجاهزة 🎁',
+        saveLabel: 'وفّر',
+        addBundle: 'أضف السلة',
+        offersKicker: 'لفترة محدودة',
+        offersHeading: 'عروض اليوم المميزة 🔥',
+        catalogHeading: 'منتجات السوبر ماركت 🛒',
+        productsCount: 'منتج',
+        showingText: 'عرض',
+        ofText: 'من أصل',
+        loadMoreBtn: 'عرض المزيد من المنتجات ↓',
+        addBtn: 'أضف',
+        outOfStock: 'نفذت الكمية',
+        maxStockToast: 'وصلت للحد الأقصى المتوفر حالياً',
+        emptySearch: 'لم نجد منتجات مطابقة لبحثك.',
+        clearSearchBtn: 'عرض كل المنتجات',
+        qlBadge: 'للزبون المستعجل',
+        qlTitle: 'ورقة المقاضي السريعة',
+        qlDesc: 'ما بدك تدوّر بين الأصناف؟ اكتب طلباتك الإضافية هون ومنضيفها لفاتورتك فوراً.',
+        qlPlaceholder: 'مثلاً: ربطتين خبز، نص كيلو جبنة عكاوي، كيلو بندورة بلدية...',
+        qlBtn: 'إرفاق بالطلب',
+        qlAttachedMsg: '✓ تم إرفاق ورقة المقاضي بسلتك!',
+        footerText: '© 2026 سوبر ماركت Welmrt - ويلمرت. جميع الحقوق محفوظة.',
+        mobileBarLabel: 'عرض السلة وإتمام الطلب',
+        sponsoredBadge: '📢 إعلان ممول',
+        adVisitBtn: 'زيارة الرابط ↗',
+        aiGreeting: 'أهلاً بك في ويلمرت! أنا مساعدك الذكي، اسألني عن أي منتج أو عرض 🛒',
+        aiTitle: 'مساعد ويلمرت الذكي',
+        aiSub: 'متصل الآن • يعرف كل منتجات المتجر',
+        aiPlaceholder: 'اسألني: عندكم زيت؟ شو عندكم منظفات؟ شو العروض؟',
+        aiSend: 'إرسال',
+        aiWelcome: 'أهلاً وسهلاً فيك بمتجر ويلمرت! 🌿 اسألني عن أي منتج، سعر، فئة (منظفات، تجميل)، أو عروض اليوم، وبضيفلك ياه مباشرة للسلة!',
+        aiPrompts: ['عندكم زيت؟', 'شو عندكم منظفات؟', 'عندكم شاي؟', 'شو العروض اليوم؟'],
+        cartTitle: 'سلة المشتريات',
+        cartEmptyText: 'سلتك فارغة حالياً.. ابدأ بإضافة منتجات!',
+        cartEmptyBtn: 'تصفح المنتجات',
+        cartQlTitle: '📝 ورقة المقاضي المرفقة:',
+        cartQlRemove: 'حذف',
+        promoLabel: '🎟️ لديك كود خصم؟ (جرّب WELMRT10)',
+        promoApply: 'تطبيق',
+        promoInvalid: 'كود الخصم غير صالح أو موقوف',
+        promoApplied: 'تم تفعيل خصم',
+        subtotal: 'المجموع الفرعي',
+        discount: 'الخصم',
+        delivery: 'أجور التوصيل',
+        freeLabel: 'مجاني',
+        grandTotal: 'الإجمالي النهائي',
+        checkoutHeading: '📦 بيانات التوصيل والدفع',
+        custName: 'الاسم الكامل *',
+        custPhone: 'رقم الموبايل (واتساب) *',
+        custAddress: 'العنوان / الحي بالتفصيل *',
+        gpsBtn: 'تحديد موقعي GPS',
+        gpsLoading: 'جاري تحديد موقعك...',
+        gpsSuccess: '✓ تم إرفاق رابط موقعك',
+        gpsFallback: 'يرجى كتابة العنوان يدوياً.',
+        paymentMethod: 'اختر عملة الدفع عند الاستلام *',
+        paySypTitle: 'الليرة السورية الجديدة',
+        paySypSub: 'نقداً عند الاستلام',
+        payUsdTitle: 'الدولار الأمريكي ($)',
+        payUsdSub: 'نقداً عند الاستلام',
+        completeOrder: 'تأكيد الطلب وإصدار الفاتورة',
+        invSubtitle: 'فاتورة طلب إلكترونية رسمية',
+        invBadge: 'طلب مؤكد',
+        invDate: 'التاريخ والوقت',
+        invCustomer: 'اسم الزبون',
+        invPhone: 'رقم الهاتف',
+        invAddress: 'عنوان التوصيل',
+        invGpsLink: 'فتح الموقع على الخريطة ↗',
+        invThItem: 'الصنف',
+        invThQty: 'الكمية',
+        invThPrice: 'السعر',
+        invThTotal: 'المجموع',
+        invPayLabel: 'طريقة الدفع المختارة',
+        invBtnWhatsapp: 'إرسال الطلب عبر واتساب',
+        invBtnPrint: 'طباعة / حفظ الفاتورة',
+        invBtnNew: 'طلب جديد',
+        pinErr: 'الرمز غير صحيح',
+        pinCancel: 'إلغاء',
+        pinSubmit: 'دخول',
+        adminTitle: 'لوحة تحكم ويلمرت السرية',
+        adminSubtitle: 'تحكم كامل بالمنتجات، الفئات، السلات، العروض، الإعلانات والأرباح',
+        adminClose: 'العودة للمتجر',
+        tabDashboard: '📊 لوحة القيادة',
+        tabProducts: '📦 المنتجات والباركود',
+        tabCategories: '🗂️ الفئات',
+        tabBundles: '🎁 السلات والعروض',
+        tabAds: '📢 الإعلانات الممولة',
+        tabSettings: '⚙️ الإعدادات والأكواد',
+        statOrders: 'عدد الطلبات',
+        statRev: 'إجمالي المبيعات',
+        statCost: 'إجمالي التكلفة',
+        statProfit: 'صافي الربح الحقيقي 💰',
+        alertLowTitle: '🚨 تنبيه النواقص (المخزون ≤ 5)',
+        alertExpiryTitle: '⏳ رادار الصلاحية (تنتهي قريباً)',
+        noLowStock: 'المخزون ممتاز! لا توجد نواقص حالياً.',
+        noExpiry: 'لا توجد منتجات قريبة الانتهاء حالياً.',
+        restockQuickBtn: '+ توريد',
+        flashConvertBtn: 'تحويل لعرض خصم 25%',
+        alreadyFlash: 'مفعّل كعرض ✓',
+        prodFormHeading: '➕ إضافة / تعديل منتج',
+        resetFormBtn: 'تفريغ الحقول',
+        lblBarcode: 'باركود المنتج (اكتب أو امسح الرقم للتوريد التلقائي)',
+        btnScanBarcode: 'مسح بالكاميرا',
+        matchBadge: 'تم التعرف على المنتج! توريد سريع',
+        matchStockPrefix: 'المخزون الحالي:',
+        btnQuickRestock: '+ إضافة للمخزون',
+        lblNameAr: 'اسم المنتج (عربي) *',
+        lblNameEn: 'اسم المنتج (إنجليزي) *',
+        lblCat: 'الفئة *',
+        lblUnit: 'الوحدة',
+        lblStock: 'الكمية بالمخزون (مخفية) *',
+        lblCurrency: 'درع التسعير',
+        lblUsdShield: '🛡️ التسعير بالدولار ($)',
+        lblCost: 'سعر التكلفة (مخفي) *',
+        lblPrice: 'سعر المبيع *',
+        lblExpiry: 'تاريخ الصلاحية (مخفي)',
+        lblImage: 'صورة المنتج (تصوير / رفع / رابط)',
+        lblUploadPhoto: 'تصوير / رفع صورة',
+        btnSaveProduct: 'حفظ ونشر المنتج فوراً',
+        invTableHeading: 'جرد المخزون الكامل',
+        adminSearchPlaceholder: 'بحث بالاسم أو الباركود...',
+        thProd: 'المنتج',
+        thCat: 'الفئة',
+        thBarcode: 'الباركود',
+        thStock: 'المخزون',
+        thPrice: 'السعر',
+        thActions: 'إجراءات',
+        catFormTitle: '➕ إضافة / تعديل فئة',
+        lblCatAr: 'اسم الفئة (عربي) *',
+        lblCatEn: 'اسم الفئة (إنجليزي) *',
+        lblCatIcon: 'الأيقونة *',
+        btnSaveCat: 'حفظ الفئة',
+        catListTitle: 'الفئات الحالية',
+        bundleFormTitle: '🎁 إنشاء / تعديل سلة ذكية',
+        lblBNameAr: 'اسم السلة (عربي) *',
+        lblBNameEn: 'اسم السلة (إنجليزي) *',
+        lblBPriceUsd: 'سعر السلة ($) *',
+        lblBEmoji: 'أيقونة',
+        lblBSelectProds: 'اختر المنتجات داخل السلة:',
+        lblBActive: 'تفعيل السلة بالواجهة',
+        btnSaveBundle: 'حفظ ونشر السلة',
+        bundleListTitle: 'السلات المسجلة',
+        offerFormTitle: '🔥 إضافة عرض خصم على منتج',
+        lblOfferProd: 'اختر المنتج',
+        lblOfferPct: 'نسبة الخصم %',
+        btnApplyOffer: '+ تفعيل العرض',
+        offerListTitle: 'العروض النشطة',
+        noOffersActive: 'لا توجد عروض نشطة حالياً.',
+        removeOfferBtn: 'إلغاء العرض',
+        adFormTitle: '📢 إضافة إعلان ممول (صورة أو فيديو)',
+        lblAdAdvertiser: 'اسم الشركة / المعلن *',
+        lblAdType: 'نوع الإعلان',
+        lblAdMedia: 'ملف الإعلان (رفع أو رابط)',
+        lblAdUpload: 'رفع صورة / فيديو',
+        lblAdLink: 'رابط الوجهة (اختياري)',
+        btnSaveAd: 'نشر الإعلان',
+        adListTitle: 'الإعلانات الممولة وعداد النقرات',
+        adClicksLabel: 'نقرة',
+        adNoAds: 'لا توجد إعلانات حالياً.',
+        adUploadReady: '✓ تم تجهيز الملف!',
+        adNeedMedia: 'الرجاء رفع صورة/فيديو أو لصق رابط.',
+        settingsHeading: 'إعدادات المتجر، سعر الصرف، والواتساب',
+        admRateLbl: 'سعر صرف الدولار (ل.س جديدة)',
+        admRateHint: 'يحدث الأسعار المسعرة بالدولار تلقائياً',
+        admDeliveryLbl: 'أجور التوصيل (ل.س جديدة)',
+        admDeliveryHint: '0 للتوصيل المجاني',
+        admWaLbl: 'رقم واتساب الطلبات',
+        admWaHint: 'مع رمز الدولة بدون +',
+        admPinLbl: 'الرمز السري للإدارة',
+        admPinHint: 'بعد 5 ضغطات على الشعار',
+        admBtnSave: 'حفظ الإعدادات',
+        admBtnReset: '🔄 استعادة البيانات الافتراضية',
+        promoCreateTitle: '🎟️ إدارة أكواد الخصم',
+        lblNewPromoCode: 'كود الخصم',
+        lblNewPromoPct: 'نسبة الخصم %',
+        btnCreatePromo: '+ تفعيل الكود',
+        qrCardSub: 'سوبر ماركت أونلاين • توصيل لباب البيت',
+        qrTagline: 'المرة الجاية لا تتعب حالك.. امسح الكود واطلب للبيت!',
+        qrFooterNote: 'امسح الكود بكاميرا الموبايل للتسوق فوراً',
+        qrPrintBtn: 'طباعة بطاقة QR',
+        scannerTitle: 'ماسح الباركود الذكي',
+        scannerStatus: 'وجّه الكاميرا نحو الباركود أو أدخل الرقم يدوياً',
+        scannerUnsupported: 'أدخل رقم الباركود يدوياً بالأسفل.',
+        scannerApply: 'تأكيد الرقم',
+        confirmDeleteProd: 'حذف هذا المنتج نهائياً؟',
+        confirmDeleteCat: 'حذف هذه الفئة؟',
+        confirmDeleteBundle: 'حذف هذه السلة؟',
+        confirmDeleteAd: 'حذف هذا الإعلان؟',
+        confirmResetData: 'استعادة كل البيانات للوضع الافتراضي؟',
+        confirmYes: 'نعم، تأكيد',
+        confirmNo: 'إلغاء',
+        toastAdded: 'تمت الإضافة للسلة',
+        toastSaved: 'تم الحفظ والتحديث فوراً!',
+        toastRestocked: 'تم تحديث المخزون بنجاح!',
+        toastFlashDone: 'تم تحويل المنتج لعرض خصم 25%!',
+        toastEmptyOrder: 'الرجاء إضافة منتج أو ورقة مقاضي أولاً.',
+        toastSelectBundleProd: 'اختر منتجاً واحداً على الأقل للسلة.',
+        activeLabel: 'مفعّل',
+        pausedLabel: 'موقوف',
+      },
+      en: {
+        tagline: 'Fresh Daily • Fast Doorstep Delivery',
+        cartBtn: 'Cart',
+        searchPlaceholder: 'Search oil, rice, detergents, shampoo, cheese...',
+        currencySYP: 'New SYP',
+        currencyUSD: '$ USD',
+        heroBadge: 'Smart Grocery Shopping from Home',
+        heroTitle: 'Your Daily Groceries from Welmrt, Delivered Fast!',
+        heroSubtitle: 'Transparent pricing in New SYP & USD, smart bundles, daily offers, and instant digital invoices.',
+        heroCtaBundles: 'Bundles & Offers',
+        heroCtaQuicklist: 'Quick List',
+        heroCtaAI: 'Ask Welmrt AI',
+        heroRateTitle: 'Live Exchange Rate',
+        heroPaymentNote: 'Cash on Delivery (New SYP or USD)',
+        categoriesHeading: 'Shop by Category 🗂️',
+        categoriesHint: 'Tap any category to filter instantly',
+        allCategories: 'All',
+        bundlesKicker: 'Save Time & Money',
+        bundlesHeading: 'Ready Smart Bundles 🎁',
+        saveLabel: 'Save',
+        addBundle: 'Add Bundle',
+        offersKicker: 'Limited Time',
+        offersHeading: "Today's Special Offers 🔥",
+        catalogHeading: 'Supermarket Products 🛒',
+        productsCount: 'items',
+        showingText: 'Showing',
+        ofText: 'of',
+        loadMoreBtn: 'Load More Products ↓',
+        addBtn: 'Add',
+        outOfStock: 'Out of Stock',
+        maxStockToast: 'Maximum available quantity reached',
+        emptySearch: 'No products matched your search.',
+        clearSearchBtn: 'Show All Products',
+        qlBadge: 'For Busy Shoppers',
+        qlTitle: 'Quick Grocery List',
+        qlDesc: 'In a hurry? Type extra items below and attach them to your order.',
+        qlPlaceholder: 'e.g., 2 bundles of bread, 500g Akkawi cheese...',
+        qlBtn: 'Attach to Order',
+        qlAttachedMsg: '✓ Quick Grocery List attached!',
+        footerText: '© 2026 Welmrt Supermarket. All rights reserved.',
+        mobileBarLabel: 'View Cart & Checkout',
+        sponsoredBadge: '📢 Sponsored',
+        adVisitBtn: 'Visit Link ↗',
+        aiGreeting: 'Welcome to Welmrt! Ask me about any product or offer 🛒',
+        aiTitle: 'Welmrt AI Assistant',
+        aiSub: 'Online • Instant Store Search',
+        aiPlaceholder: 'Ask: Do you have oil? Show detergents? Offers?',
+        aiSend: 'Send',
+        aiWelcome: 'Welcome to Welmrt! 🌿 Ask me about any product, price, category, or today\'s deals!',
+        aiPrompts: ['Do you have oil?', 'Show detergents', 'Do you have tea?', "Today's offers?"],
+        cartTitle: 'Shopping Cart',
+        cartEmptyText: 'Your cart is empty. Add products to begin!',
+        cartEmptyBtn: 'Browse Products',
+        cartQlTitle: '📝 Attached Quick List:',
+        cartQlRemove: 'Remove',
+        promoLabel: '🎟️ Have a Promo Code? (Try WELMRT10)',
+        promoApply: 'Apply',
+        promoInvalid: 'Invalid or inactive promo code',
+        promoApplied: 'Discount applied',
+        subtotal: 'Subtotal',
+        discount: 'Discount',
+        delivery: 'Delivery Fee',
+        freeLabel: 'Free',
+        grandTotal: 'Grand Total',
+        checkoutHeading: '📦 Delivery & Payment Details',
+        custName: 'Full Name *',
+        custPhone: 'Mobile Number (WhatsApp) *',
+        custAddress: 'Address / Neighborhood *',
+        gpsBtn: 'Locate Me (GPS)',
+        gpsLoading: 'Detecting location...',
+        gpsSuccess: '✓ Google Maps link attached',
+        gpsFallback: 'Please type your address manually.',
+        paymentMethod: 'Payment Currency on Delivery *',
+        paySypTitle: 'New Syrian Pound (SYP)',
+        paySypSub: 'Cash on Delivery',
+        payUsdTitle: 'US Dollar ($ USD)',
+        payUsdSub: 'Cash on Delivery',
+        completeOrder: 'Confirm Order & Generate Invoice',
+        invSubtitle: 'Official Digital Order Invoice',
+        invBadge: 'Confirmed',
+        invDate: 'Date & Time',
+        invCustomer: 'Customer',
+        invPhone: 'Phone',
+        invAddress: 'Delivery Address',
+        invGpsLink: 'Open on Maps ↗',
+        invThItem: 'Item',
+        invThQty: 'Qty',
+        invThPrice: 'Price',
+        invThTotal: 'Total',
+        invPayLabel: 'Selected Payment Method',
+        invBtnWhatsapp: 'Send Order via WhatsApp',
+        invBtnPrint: 'Print / Save Invoice',
+        invBtnNew: 'New Order',
+        pinErr: 'Incorrect code',
+        pinCancel: 'Cancel',
+        pinSubmit: 'Unlock',
+        adminTitle: 'Welmrt Secret Admin Panel',
+        adminSubtitle: 'Control products, categories, bundles, offers, ads & profits',
+        adminClose: 'Back to Store',
+        tabDashboard: '📊 Dashboard',
+        tabProducts: '📦 Products & Barcode',
+        tabCategories: '🗂️ Categories',
+        tabBundles: '🎁 Bundles & Offers',
+        tabAds: '📢 Sponsored Ads',
+        tabSettings: '⚙️ Settings & Promos',
+        statOrders: 'Total Orders',
+        statRev: 'Total Revenue',
+        statCost: 'Total Cost',
+        statProfit: 'Net Profit 💰',
+        alertLowTitle: '🚨 Low Stock Alerts (≤ 5)',
+        alertExpiryTitle: '⏳ Expiry Radar',
+        noLowStock: 'Inventory is healthy!',
+        noExpiry: 'No items nearing expiry.',
+        restockQuickBtn: '+ Restock',
+        flashConvertBtn: 'Make 25% Flash Deal',
+        alreadyFlash: 'Active Deal ✓',
+        prodFormHeading: '➕ Add / Edit Product',
+        resetFormBtn: 'Clear Form',
+        lblBarcode: 'Product Barcode (Type or scan for Quick Restock)',
+        btnScanBarcode: 'Scan Camera',
+        matchBadge: 'Product Detected! Quick Restock',
+        matchStockPrefix: 'Current Stock:',
+        btnQuickRestock: '+ Add to Stock',
+        lblNameAr: 'Product Name (Arabic) *',
+        lblNameEn: 'Product Name (English) *',
+        lblCat: 'Category *',
+        lblUnit: 'Unit',
+        lblStock: 'Hidden Stock Quantity *',
+        lblCurrency: 'Pricing Shield',
+        lblUsdShield: '🛡️ Price in USD ($)',
+        lblCost: 'Hidden Cost Price *',
+        lblPrice: 'Selling Price *',
+        lblExpiry: 'Hidden Expiry Date',
+        lblImage: 'Product Photo (Camera / Upload / URL)',
+        lblUploadPhoto: 'Camera / Upload',
+        btnSaveProduct: 'Save & Publish Live',
+        invTableHeading: 'Full Private Inventory',
+        adminSearchPlaceholder: 'Search by name or barcode...',
+        thProd: 'Product',
+        thCat: 'Category',
+        thBarcode: 'Barcode',
+        thStock: 'Stock',
+        thPrice: 'Price',
+        thActions: 'Actions',
+        catFormTitle: '➕ Add / Edit Category',
+        lblCatAr: 'Category Name (Arabic) *',
+        lblCatEn: 'Category Name (English) *',
+        lblCatIcon: 'Icon *',
+        btnSaveCat: 'Save Category',
+        catListTitle: 'Active Categories',
+        bundleFormTitle: '🎁 Create / Edit Smart Bundle',
+        lblBNameAr: 'Bundle Name (Arabic) *',
+        lblBNameEn: 'Bundle Name (English) *',
+        lblBPriceUsd: 'Bundle Price ($ USD) *',
+        lblBEmoji: 'Icon',
+        lblBSelectProds: 'Select Products:',
+        lblBActive: 'Active on storefront',
+        btnSaveBundle: 'Save & Publish Bundle',
+        bundleListTitle: 'Configured Bundles',
+        offerFormTitle: '🔥 Add Special Product Offer',
+        lblOfferProd: 'Select Product',
+        lblOfferPct: 'Discount %',
+        btnApplyOffer: '+ Activate Offer',
+        offerListTitle: 'Active Offers',
+        noOffersActive: 'No active offers right now.',
+        removeOfferBtn: 'Remove Offer',
+        adFormTitle: '📢 Add Sponsored Ad (Image or Video)',
+        lblAdAdvertiser: 'Company / Advertiser *',
+        lblAdType: 'Media Type',
+        lblAdMedia: 'Ad Media (Upload or URL)',
+        lblAdUpload: 'Upload Image / Video',
+        lblAdLink: 'Destination URL (Optional)',
+        btnSaveAd: 'Publish Ad',
+        adListTitle: 'Sponsored Ads & Clicks',
+        adClicksLabel: 'clicks',
+        adNoAds: 'No sponsored ads yet.',
+        adUploadReady: '✓ File ready!',
+        adNeedMedia: 'Please upload a file or paste a URL.',
+        settingsHeading: 'Store Settings, Exchange Rate & WhatsApp',
+        admRateLbl: 'USD Exchange Rate (New SYP)',
+        admRateHint: 'Auto-updates USD-shielded prices',
+        admDeliveryLbl: 'Delivery Fee (New SYP)',
+        admDeliveryHint: '0 for free delivery',
+        admWaLbl: 'WhatsApp Order Number',
+        admWaHint: 'With country code, no +',
+        admPinLbl: 'Admin PIN',
+        admPinHint: 'Used after 5 taps on logo',
+        admBtnSave: 'Save Settings',
+        admBtnReset: '🔄 Reset Demo Data',
+        promoCreateTitle: '🎟️ Manage Promo Codes',
+        lblNewPromoCode: 'Promo Code',
+        lblNewPromoPct: 'Discount %',
+        btnCreatePromo: '+ Activate Code',
+        qrCardSub: 'Online Supermarket • Fast Home Delivery',
+        qrTagline: 'Skip the trip next time.. Scan & Order straight to your door!',
+        qrFooterNote: 'Scan with phone camera to shop instantly',
+        qrPrintBtn: 'Print QR Card',
+        scannerTitle: 'Smart Barcode Scanner',
+        scannerStatus: 'Point camera at barcode or type code manually',
+        scannerUnsupported: 'Enter barcode manually below.',
+        scannerApply: 'Use Code',
+        confirmDeleteProd: 'Delete this product permanently?',
+        confirmDeleteCat: 'Delete this category?',
+        confirmDeleteBundle: 'Delete this bundle?',
+        confirmDeleteAd: 'Delete this ad?',
+        confirmResetData: 'Reset all data to default?',
+        confirmYes: 'Yes, Confirm',
+        confirmNo: 'Cancel',
+        toastAdded: 'Added to cart',
+        toastSaved: 'Saved & updated live!',
+        toastRestocked: 'Stock updated!',
+        toastFlashDone: 'Converted to 25% Flash Deal!',
+        toastEmptyOrder: 'Please add at least one product or quick list.',
+        toastSelectBundleProd: 'Select at least one product.',
+        activeLabel: 'Active',
+        pausedLabel: 'Paused',
+      }
+    };
+
+    /* 4. SEED DATA & STORAGE */
+    const STORAGE_KEY = 'welmrt_supermarket_v5';
+
+    function daysFromToday(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    }
+
+    function buildDefaultData() {
+      return {
+        categories: [
+          { id: 'cat-groceries', ar: 'غذائيات', en: 'Groceries', icon: '🫒' },
+          { id: 'cat-detergents', ar: 'منظفات', en: 'Detergents', icon: '🧼' },
+          { id: 'cat-beauty', ar: 'تجميل وعناية', en: 'Beauty & Care', icon: '✨' },
+          { id: 'cat-beverages', ar: 'مشروبات', en: 'Beverages', icon: '☕' },
+          { id: 'cat-dairy', ar: 'ألبان وأجبان', en: 'Dairy', icon: '🧀' },
+          { id: 'cat-sweets', ar: 'حلويات', en: 'Sweets', icon: '🍫' },
+        ],
+        products: [
+          { id: 'p-1', barcode: '6211001', categoryId: 'cat-groceries', emoji: '🌻', bg: 'bg-amber-50', nameAr: 'زيت دوار الشمس صافي', nameEn: 'Pure Sunflower Oil', unit: '1 لتر / 1L', priceCurrency: 'USD', costPrice: 1.5, sellingPrice: 2.0, stock: 34, expiryDate: daysFromToday(240), discountPercent: 15, image: '' },
+          { id: 'p-2', barcode: '6211002', categoryId: 'cat-groceries', emoji: '🍚', bg: 'bg-stone-100', nameAr: 'رز بسمتي هندي حبة طويلة', nameEn: 'Indian Basmati Rice', unit: '1 كغ / 1kg', priceCurrency: 'USD', costPrice: 1.3, sellingPrice: 1.8, stock: 45, expiryDate: daysFromToday(365), discountPercent: 0, image: '' },
+          { id: 'p-3', barcode: '6211003', categoryId: 'cat-groceries', emoji: '🫒', bg: 'bg-lime-50', nameAr: 'زيت زيتون بكر ممتاز', nameEn: 'Extra Virgin Olive Oil', unit: '1 لتر / 1L', priceCurrency: 'USD', costPrice: 5.0, sellingPrice: 6.5, stock: 18, expiryDate: daysFromToday(300), discountPercent: 0, image: '' },
+          { id: 'p-4', barcode: '6211004', categoryId: 'cat-groceries', emoji: '🧂', bg: 'bg-slate-100', nameAr: 'سكر أبيض ناعم', nameEn: 'Fine White Sugar', unit: '1 كغ / 1kg', priceCurrency: 'SYP', costPrice: 85, sellingPrice: 110, stock: 60, expiryDate: '', discountPercent: 0, image: '' },
+          { id: 'p-5', barcode: '6211005', categoryId: 'cat-detergents', emoji: '🧺', bg: 'bg-sky-50', nameAr: 'مسحوق غسيل أوتوماتيك', nameEn: 'Automatic Laundry Detergent', unit: '3 كغ / 3kg', priceCurrency: 'USD', costPrice: 3.6, sellingPrice: 4.8, stock: 24, expiryDate: '', discountPercent: 10, image: '' },
+          { id: 'p-6', barcode: '6211006', categoryId: 'cat-detergents', emoji: '🍋', bg: 'bg-yellow-50', nameAr: 'سائل جلي برائحة الليمون', nameEn: 'Lemon Dishwashing Liquid', unit: '1 لتر / 1L', priceCurrency: 'USD', costPrice: 0.9, sellingPrice: 1.4, stock: 4, expiryDate: '', discountPercent: 0, image: '' },
+          { id: 'p-7', barcode: '6211007', categoryId: 'cat-beauty', emoji: '🧴', bg: 'bg-pink-50', nameAr: 'شامبو عناية بالكيراتين', nameEn: 'Keratin Care Shampoo', unit: '400 مل / 400ml', priceCurrency: 'USD', costPrice: 2.2, sellingPrice: 3.2, stock: 22, expiryDate: daysFromToday(400), discountPercent: 0, image: '' },
+          { id: 'p-8', barcode: '6211008', categoryId: 'cat-beauty', emoji: '🫧', bg: 'bg-rose-50', nameAr: 'كريم ترطيب يومي للبشرة', nameEn: 'Daily Moisturizing Cream', unit: '150 مل / 150ml', priceCurrency: 'USD', costPrice: 1.8, sellingPrice: 2.7, stock: 16, expiryDate: daysFromToday(320), discountPercent: 20, image: '' },
+          { id: 'p-9', barcode: '6211009', categoryId: 'cat-beverages', emoji: '🍵', bg: 'bg-emerald-50', nameAr: 'شاي سيلاني فاخر', nameEn: 'Premium Ceylon Black Tea', unit: '500 غرام / 500g', priceCurrency: 'USD', costPrice: 2.8, sellingPrice: 3.8, stock: 0, expiryDate: daysFromToday(400), discountPercent: 0, image: '' },
+          { id: 'p-10', barcode: '6211010', categoryId: 'cat-beverages', emoji: '☕', bg: 'bg-amber-100/70', nameAr: 'قهوة عربية محمصة بالهيل', nameEn: 'Arabic Cardamom Coffee', unit: '500 غرام / 500g', priceCurrency: 'USD', costPrice: 4.0, sellingPrice: 5.5, stock: 25, expiryDate: daysFromToday(180), discountPercent: 0, image: '' },
+          { id: 'p-11', barcode: '6211011', categoryId: 'cat-dairy', emoji: '🥛', bg: 'bg-blue-50', nameAr: 'لبنة بلدية طازجة', nameEn: 'Fresh Baladi Labneh', unit: '500 غرام / 500g', priceCurrency: 'SYP', costPrice: 160, sellingPrice: 220, stock: 14, expiryDate: daysFromToday(9), discountPercent: 0, image: '' },
+          { id: 'p-12', barcode: '6211012', categoryId: 'cat-dairy', emoji: '🧀', bg: 'bg-yellow-50', nameAr: 'جبنة حلوم أصلية', nameEn: 'Original Halloumi Cheese', unit: '400 غرام / 400g', priceCurrency: 'USD', costPrice: 2.2, sellingPrice: 3.0, stock: 3, expiryDate: daysFromToday(45), discountPercent: 0, image: '' },
+          { id: 'p-13', barcode: '6211013', categoryId: 'cat-sweets', emoji: '🍫', bg: 'bg-orange-50', nameAr: 'شوكولا داكنة بالبندق', nameEn: 'Dark Hazelnut Chocolate', unit: '200 غرام / 200g', priceCurrency: 'USD', costPrice: 1.4, sellingPrice: 2.1, stock: 30, expiryDate: daysFromToday(200), discountPercent: 0, image: '' },
+          { id: 'p-14', barcode: '6211014', categoryId: 'cat-sweets', emoji: '🍪', bg: 'bg-amber-50', nameAr: 'بسكويت ضيافة بالزبدة', nameEn: 'Butter Hospitality Biscuits', unit: '400 غرام / 400g', priceCurrency: 'SYP', costPrice: 110, sellingPrice: 150, stock: 27, expiryDate: daysFromToday(150), discountPercent: 15, image: '' },
+        ],
+        bundles: [
+          { id: 'b-breakfast', emoji: '🥐', nameAr: 'سلة الفطور العائلية', nameEn: 'Family Breakfast Basket', productIds: ['p-11', 'p-12', 'p-3'], priceUSD: 9.2, active: true },
+          { id: 'b-cleaning', emoji: '🫧', nameAr: 'سلة المنظفات الشاملة', nameEn: 'Complete Detergents Basket', productIds: ['p-5', 'p-6', 'p-7'], priceUSD: 7.5, active: true },
+          { id: 'b-hospitality', emoji: '☕', nameAr: 'سلة القهوة والضيافة', nameEn: 'Coffee & Sweets Basket', productIds: ['p-10', 'p-13', 'p-14'], priceUSD: 7.4, active: true },
+        ],
+        promos: [{ id: 'pr-1', code: 'WELMRT10', discountPercent: 10, active: true }],
+        ads: [{
+          id: 'ad-1',
+          advertiser: 'عروض ويلمرت الكبرى | Welmrt Grand Offers',
+          mediaType: 'image',
+          mediaUrl: 'https://placehold.co/1200x360/1E293B/F4C430?text=Welmrt+Sponsored+Banner',
+          targetUrl: 'https://welmrt.store',
+          active: true,
+          clicks: 14,
+        }],
+        orders: [],
+        settings: { exchangeRate: 150, deliveryFeeSYP: 100, whatsapp: '963945810376', adminPin: '1234' }
+      };
+    }
+
+    function loadPersistedData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.categories)) return parsed;
+        }
+      } catch (e) {}
+      const fresh = buildDefaultData();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh)); } catch (e) {}
+      return fresh;
+    }
+
+    const initial = loadPersistedData();
+    const state = {
+      lang: 'ar',
+      currency: 'SYP',
+      selectedCategory: 'all',
+      search: '',
+      visibleLimit: 12,
+      categories: initial.categories,
+      products: initial.products,
+      bundles: initial.bundles,
+      promos: initial.promos,
+      ads: initial.ads,
+      orders: initial.orders || [],
+      settings: initial.settings,
+      currentAdIndex: 0,
+      adVideoMuted: true,
+      uploadedAdMediaData: '',
+      uploadedImageBase64: '',
+      matchedBarcodeProduct: null,
+      cart: {},
+      quickList: '',
+      appliedPromo: null,
+      customerGpsUrl: '',
+      lastOrder: null,
+      activeAdminTab: 'dashboard',
+      aiOpen: false,
+      aiWelcomed: false,
+    };
+
+    function persist() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          categories: state.categories,
+          products: state.products,
+          bundles: state.bundles,
+          promos: state.promos,
+          ads: state.ads,
+          orders: state.orders,
+          settings: state.settings,
+        }));
+      } catch (e) {}
+    }
+
+    /* 5. BACKGROUND FIREBASE SYNC */
+    function fsSet(col, docId, data) {
+      if (!db) return;
+      try { db.collection(col).doc(String(docId)).set(data, { merge: true }).catch(() => {}); } catch (e) {}
+    }
+    function fsDelete(col, docId) {
+      if (!db) return;
+      try { db.collection(col).doc(String(docId)).delete().catch(() => {}); } catch (e) {}
+    }
+    function fsSaveSettings() {
+      if (!db) return;
+      try { db.collection('settings').doc('main').set({ ...state.settings, promos: state.promos }, { merge: true }).catch(() => {}); } catch (e) {}
+    }
+
+    async function startRealtimeSync() {
+      if (!db) { updateCloudBadge(false); return; }
+      try {
+        const snap = await db.collection('products').limit(1).get();
+        if (snap.empty) {
+          const seed = buildDefaultData();
+          const batch = db.batch();
+          seed.categories.forEach((c) => batch.set(db.collection('categories').doc(c.id), c));
+          seed.products.forEach((p) => batch.set(db.collection('products').doc(p.id), p));
+          seed.bundles.forEach((b) => batch.set(db.collection('bundles').doc(b.id), b));
+          seed.ads.forEach((a) => batch.set(db.collection('ads').doc(a.id), a));
+          batch.set(db.collection('settings').doc('main'), { ...seed.settings, promos: seed.promos });
+          await batch.commit();
+        }
+
+        db.collection('categories').onSnapshot((s) => {
+          updateCloudBadge(true);
+          if (!s.empty) { state.categories = s.docs.map((d) => ({ id: d.id, ...d.data() })); persist(); renderAll(); }
+        }, () => updateCloudBadge(false));
+
+        db.collection('products').onSnapshot((s) => {
+          updateCloudBadge(true);
+          if (!s.empty) { state.products = s.docs.map((d) => ({ id: d.id, ...d.data() })); persist(); renderAll(); }
+        }, () => updateCloudBadge(false));
+
+        db.collection('bundles').onSnapshot((s) => {
+          updateCloudBadge(true);
+          state.bundles = s.docs.map((d) => ({ id: d.id, ...d.data() })); persist(); renderAll();
+        }, () => updateCloudBadge(false));
+
+        db.collection('ads').onSnapshot((s) => {
+          updateCloudBadge(true);
+          state.ads = s.docs.map((d) => ({ id: d.id, ...d.data() })); persist(); renderAll();
+        }, () => updateCloudBadge(false));
+
+        db.collection('orders').onSnapshot((s) => {
+          updateCloudBadge(true);
+          state.orders = s.docs.map((d) => ({ id: d.id, ...d.data() })); persist();
+          if (!document.getElementById('admin-modal').classList.contains('hidden')) renderAdminDashboard();
+        }, () => updateCloudBadge(false));
+
+        db.collection('settings').doc('main').onSnapshot((doc) => {
+          updateCloudBadge(true);
+          if (doc.exists) {
+            const d = doc.data();
+            state.settings = {
+              exchangeRate: Number(d.exchangeRate) || 150,
+              deliveryFeeSYP: Number(d.deliveryFeeSYP ?? 100),
+              whatsapp: d.whatsapp || '963945810376',
+              adminPin: d.adminPin || '1234',
+            };
+            if (Array.isArray(d.promos)) state.promos = d.promos;
+            persist();
+            renderAll();
+          }
+        }, () => updateCloudBadge(false));
+      } catch (e) {
+        updateCloudBadge(false);
+      }
+    }
+
+    /* 6. HELPERS */
+    function t(key) { return (I18N[state.lang] && I18N[state.lang][key]) || key; }
+    function getRate() { return Number(state.settings.exchangeRate) || 150; }
+
+    function computeProductPrices(p) {
+      const rate = getRate();
+      const baseSYP = p.priceCurrency === 'USD' ? Number(p.sellingPrice) * rate : Number(p.sellingPrice);
+      const costSYP = p.priceCurrency === 'USD' ? Number(p.costPrice || 0) * rate : Number(p.costPrice || 0);
+      const disc = Math.min(90, Math.max(0, Number(p.discountPercent || 0)));
+      const finalSYP = disc > 0 ? baseSYP * (1 - disc / 100) : baseSYP;
+      return { baseSYP, finalSYP, finalUSD: finalSYP / rate, costSYP, discountPercent: disc };
+    }
+
+    function computeBundleDetails(b) {
+      const rate = getRate();
+      const includedProds = (b.productIds || []).map((pid) => state.products.find((p) => p.id === pid)).filter(Boolean);
+      let originalSYP = 0, costSYP = 0;
+      includedProds.forEach((p) => { const pr = computeProductPrices(p); originalSYP += pr.baseSYP; costSYP += pr.costSYP; });
+      const finalSYP = Number(b.priceUSD) * rate;
+      if (originalSYP < finalSYP) originalSYP = finalSYP * 1.15;
+      return { includedProds, originalSYP, finalSYP, costSYP, savingsSYP: Math.max(0, originalSYP - finalSYP) };
+    }
+
+    function formatSYP(amountSYP) {
+      const n = Math.round(amountSYP).toLocaleString('en-US');
+      return state.lang === 'ar' ? `${n} ل.س جديدة` : `${n} New SYP`;
+    }
+    function formatUSD(amountSYP) { return `$${(amountSYP / getRate()).toFixed(2)}`; }
+    function formatPrimaryPrice(amountSYP) { return state.currency === 'SYP' ? formatSYP(amountSYP) : formatUSD(amountSYP); }
+    function formatSecondaryPrice(amountSYP) { return state.currency === 'SYP' ? formatUSD(amountSYP) : formatSYP(amountSYP); }
+
+    function findCatalogItem(id) {
+      const prod = state.products.find((p) => p.id === id);
+      if (prod) { const pr = computeProductPrices(prod); return { ...prod, isBundle: false, unitPriceSYP: pr.finalSYP, unitCostSYP: pr.costSYP }; }
+      const b = state.bundles.find((x) => x.id === id);
+      if (b) { const bd = computeBundleDetails(b); return { ...b, isBundle: true, stock: 999, unitPriceSYP: bd.finalSYP, unitCostSYP: bd.costSYP }; }
+      return null;
+    }
+
+    function getCartTotals() {
+      let itemCount = 0, subtotalSYP = 0, totalCostSYP = 0;
+      const items = [];
+      Object.entries(state.cart).forEach(([id, qty]) => {
+        if (qty <= 0) return;
+        const item = findCatalogItem(id);
+        if (!item || (!item.isBundle && Number(item.stock) <= 0)) return;
+        const safeQty = item.isBundle ? qty : Math.min(qty, Number(item.stock));
+        itemCount += safeQty;
+        const lineSYP = item.unitPriceSYP * safeQty;
+        const lineCostSYP = item.unitCostSYP * safeQty;
+        subtotalSYP += lineSYP;
+        totalCostSYP += lineCostSYP;
+        items.push({ ...item, qty: safeQty, lineSYP, lineCostSYP });
+      });
+      const hasOrderContent = items.length > 0 || state.quickList.trim().length > 0;
+      const discountSYP = (state.appliedPromo && state.appliedPromo.active) ? subtotalSYP * (Number(state.appliedPromo.discountPercent) / 100) : 0;
+      const deliverySYP = hasOrderContent ? Number(state.settings.deliveryFeeSYP || 0) : 0;
+      const totalSYP = Math.max(0, subtotalSYP - discountSYP) + deliverySYP;
+      const netProfitSYP = Math.max(0, subtotalSYP - discountSYP) - totalCostSYP;
+      return { items, itemCount, subtotalSYP, discountSYP, deliverySYP, totalSYP, totalCostSYP, netProfitSYP, hasOrderContent };
+    }
+
+    let toastTimer = null;
+    function showToast(msg, type = 'success') {
+      const c = document.getElementById('toast-container');
+      c.innerHTML = `<div class="${type === 'error' ? 'bg-brandRed' : 'bg-slate-900'} text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs sm:text-sm font-bold animate-fade-in">${type === 'error' ? '⚠️' : '✅'} ${msg}</div>`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { c.innerHTML = ''; }, 2500);
+    }
+
+    let confirmResolver = null;
+    function askConfirm(message) {
+      return new Promise((resolve) => {
+        confirmResolver = resolve;
+        document.getElementById('confirm-message').textContent = message;
+        document.getElementById('confirm-yes-btn').textContent = t('confirmYes');
+        document.getElementById('confirm-no-btn').textContent = t('confirmNo');
+        document.getElementById('confirm-modal').classList.remove('hidden');
+      });
+    }
+    function resolveConfirm(val) {
+      document.getElementById('confirm-modal').classList.add('hidden');
+      if (confirmResolver) confirmResolver(val);
+      confirmResolver = null;
+    }
+
+    /* 7. MASTER RENDER */
+    function renderAll() {
+      document.documentElement.lang = state.lang;
+      document.documentElement.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
+
+      const logoSVG = getWelmrtLogoSVG();
+      ['header-logo', 'invoice-logo', 'qr-card-logo', 'pin-logo', 'admin-header-logo', 'ai-header-logo'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = logoSVG;
+      });
+
+      document.getElementById('header-tagline').textContent = t('tagline');
+      document.getElementById('currency-label').textContent = state.currency === 'SYP' ? t('currencySYP') : t('currencyUSD');
+      document.getElementById('btn-lang').textContent = state.lang === 'ar' ? 'EN' : 'عربي';
+      document.getElementById('cart-btn-text').textContent = t('cartBtn');
+      document.getElementById('search-input').placeholder = t('searchPlaceholder');
+
+      document.getElementById('hero-badge').textContent = t('heroBadge');
+      document.getElementById('hero-title').textContent = t('heroTitle');
+      document.getElementById('hero-subtitle').textContent = t('heroSubtitle');
+      document.getElementById('hero-cta-bundles').textContent = t('heroCtaBundles');
+      document.getElementById('hero-cta-quicklist').textContent = t('heroCtaQuicklist');
+      document.getElementById('hero-cta-ai').textContent = t('heroCtaAI');
+      document.getElementById('hero-rate-title').textContent = t('heroRateTitle');
+      document.getElementById('hero-rate-value').textContent = `1$ = ${getRate()} ${t('currencySYP')}`;
+      document.getElementById('hero-payment-note').textContent = t('heroPaymentNote');
+
+      document.getElementById('categories-heading').textContent = t('categoriesHeading');
+      document.getElementById('categories-hint').textContent = t('categoriesHint');
+      document.getElementById('bundles-kicker').textContent = t('bundlesKicker');
+      document.getElementById('bundles-heading').textContent = t('bundlesHeading');
+      document.getElementById('offers-kicker').textContent = t('offersKicker');
+      document.getElementById('offers-heading').textContent = t('offersHeading');
+      document.getElementById('catalog-heading').textContent = t('catalogHeading');
+      document.getElementById('empty-search-text').textContent = t('emptySearch');
+      document.getElementById('empty-search-btn').textContent = t('clearSearchBtn');
+
+      document.getElementById('ql-badge').textContent = t('qlBadge');
+      document.getElementById('ql-title').textContent = t('qlTitle');
+      document.getElementById('ql-desc').textContent = t('qlDesc');
+      document.getElementById('quick-list-input').placeholder = t('qlPlaceholder');
+      document.getElementById('ql-btn-text').textContent = t('qlBtn');
+      document.getElementById('ql-status').textContent = state.quickList.trim() ? t('qlAttachedMsg') : '';
+      document.getElementById('footer-text').textContent = t('footerText');
+
+      document.getElementById('ai-greeting-text').textContent = t('aiGreeting');
+      document.getElementById('ai-panel-title').textContent = t('aiTitle');
+      document.getElementById('ai-panel-sub').textContent = t('aiSub');
+      document.getElementById('ai-input').placeholder = t('aiPlaceholder');
+      document.getElementById('ai-send-label').textContent = t('aiSend');
+      renderAIQuickPrompts();
+
+      renderSponsoredAds();
+      renderCategoriesBar();
+      renderBundlesSection();
+      renderOffersSection();
+      renderProductsGrid();
+      renderCartIndicators();
+      renderCartDrawer();
+      if (!document.getElementById('admin-modal').classList.contains('hidden')) renderAdminUI();
+    }
+
+    function toggleLanguage() { state.lang = state.lang === 'ar' ? 'en' : 'ar'; renderAll(); }
+    function toggleCurrency() { state.currency = state.currency === 'SYP' ? 'USD' : 'SYP'; renderAll(); }
+
+    /* SPONSORED ADS */
+    let adSlideTimer = null;
+    function getActiveAds() { return state.ads.filter((a) => a.active); }
+
+    function renderSponsoredAds() {
+      const section = document.getElementById('sponsored-ads-section');
+      const stage = document.getElementById('sponsored-ad-stage');
+      clearInterval(adSlideTimer);
+      const activeAds = getActiveAds();
+      if (activeAds.length === 0) { section.classList.add('hidden'); return; }
+
+      section.classList.remove('hidden');
+      document.getElementById('sponsored-badge-label').textContent = t('sponsoredBadge');
+      if (state.currentAdIndex >= activeAds.length) state.currentAdIndex = 0;
+      const ad = activeAds[state.currentAdIndex];
+      const isVideo = ad.mediaType === 'video';
+      const safeUrl = (ad.targetUrl || '').replace(/'/g, "\\'");
+
+      stage.innerHTML = `
+        <div ${ad.targetUrl ? `onclick="trackAdClick('${ad.id}', '${safeUrl}')"` : ''} class="w-full h-full relative ${ad.targetUrl ? 'cursor-pointer' : ''}">
+          ${isVideo
+            ? `<video id="active-ad-video" src="${ad.mediaUrl}" class="w-full h-full object-cover" autoplay loop playsinline ${state.adVideoMuted ? 'muted' : ''}></video>`
+            : `<img src="${ad.mediaUrl}" alt="${ad.advertiser}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/1200x360/1E293B/F4C430?text=Welmrt+Ad'" />`
+          }
+          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 to-transparent p-3.5 sm:p-5 flex items-end justify-between gap-2">
+            <p class="text-white font-black text-sm sm:text-base truncate">${ad.advertiser}</p>
+            ${ad.targetUrl ? `<span class="shrink-0 bg-brandYellow text-slate-900 text-[11px] sm:text-xs font-black px-3 py-1.5 rounded-xl">${t('adVisitBtn')}</span>` : ''}
+          </div>
+        </div>
+      `;
+
+      const muteBtn = document.getElementById('ad-mute-btn');
+      muteBtn.classList.toggle('hidden', !isVideo);
+      if (isVideo) muteBtn.textContent = state.adVideoMuted ? '🔇' : '🔊';
+
+      const multi = activeAds.length > 1;
+      document.getElementById('ad-prev-btn').classList.toggle('hidden', !multi);
+      document.getElementById('ad-next-btn').classList.toggle('hidden', !multi);
+      const dotsEl = document.getElementById('ad-dots');
+      dotsEl.classList.toggle('hidden', !multi);
+      if (multi) {
+        dotsEl.innerHTML = activeAds.map((_, idx) => `<button type="button" onclick="event.stopPropagation(); goToAdSlide(${idx})" class="h-2 rounded-full ${idx === state.currentAdIndex ? 'w-6 bg-brandYellow' : 'w-2 bg-white/50'}"></button>`).join('');
+        if (!isVideo) adSlideTimer = setInterval(() => { state.currentAdIndex = (state.currentAdIndex + 1) % getActiveAds().length; renderSponsoredAds(); }, 5500);
+      }
+    }
+    function nextAdSlide() { const l = getActiveAds(); if (l.length > 1) { state.currentAdIndex = (state.currentAdIndex + 1) % l.length; renderSponsoredAds(); } }
+    function prevAdSlide() { const l = getActiveAds(); if (l.length > 1) { state.currentAdIndex = (state.currentAdIndex - 1 + l.length) % l.length; renderSponsoredAds(); } }
+    function goToAdSlide(i) { state.currentAdIndex = i; renderSponsoredAds(); }
+    function toggleAdMute() { state.adVideoMuted = !state.adVideoMuted; const v = document.getElementById('active-ad-video'); if (v) v.muted = state.adVideoMuted; document.getElementById('ad-mute-btn').textContent = state.adVideoMuted ? '🔇' : '🔊'; }
+    function trackAdClick(adId, url) {
+      const ad = state.ads.find((a) => a.id === adId);
+      if (ad) { ad.clicks = Number(ad.clicks || 0) + 1; persist(); fsSet('ads', ad.id, { clicks: ad.clicks }); }
+      if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    /* CATEGORIES BAR */
+    function renderCategoriesBar() {
+      const bar = document.getElementById('category-cards-bar');
+      const isAll = state.selectedCategory === 'all';
+      const cards = [
+        `<button type="button" onclick="selectCategory('all')" class="shrink-0 min-w-[92px] rounded-2xl p-3 border-2 text-center transition flex flex-col items-center gap-1 ${isAll ? 'bg-brandRed text-white border-brandRed shadow-md' : 'bg-white text-slate-800 border-slate-200'}"><span class="text-2xl">🏪</span><span class="text-xs font-black">${t('allCategories')}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isAll ? 'bg-white/20 text-brandYellow' : 'bg-slate-100 text-slate-500'}">${state.products.length}</span></button>`,
+        ...state.categories.map((c) => {
+          const count = state.products.filter((p) => p.categoryId === c.id).length;
+          const active = state.selectedCategory === c.id;
+          return `<button type="button" onclick="selectCategory('${c.id}')" class="shrink-0 min-w-[98px] rounded-2xl p-3 border-2 text-center transition flex flex-col items-center gap-1 ${active ? 'bg-brandRed text-white border-brandRed shadow-md' : 'bg-white text-slate-800 border-slate-200'}"><span class="text-2xl">${c.icon || '📦'}</span><span class="text-xs font-black whitespace-nowrap">${state.lang === 'ar' ? c.ar : c.en}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${active ? 'bg-white/20 text-brandYellow' : 'bg-slate-100 text-slate-500'}">${count}</span></button>`;
+        })
+      ];
+      bar.innerHTML = cards.join('');
+    }
+    function selectCategory(catId) {
+      state.selectedCategory = catId;
+      state.visibleLimit = 12;
+      renderCategoriesBar();
+      renderProductsGrid();
+    }
+
+    /* BUNDLES & OFFERS */
+    function renderBundlesSection() {
+      const wrap = document.getElementById('bundles-wrapper');
+      const active = state.bundles.filter((b) => b.active);
+      if (active.length === 0) { wrap.classList.add('hidden'); return; }
+      wrap.classList.remove('hidden');
+      document.getElementById('bundles-grid').innerHTML = active.map((b) => {
+        const bd = computeBundleDetails(b);
+        const qty = state.cart[b.id] || 0;
+        const name = state.lang === 'ar' ? b.nameAr : b.nameEn;
+        return `
+          <div class="rounded-3xl bg-gradient-to-br from-amber-50 via-white to-green-50/70 border-2 border-yellow-300/80 p-5 shadow-xs flex flex-col justify-between gap-4">
+            <div class="space-y-2.5">
+              <div class="flex items-start justify-between gap-2">
+                <span class="w-12 h-12 rounded-2xl bg-white border border-yellow-200 flex items-center justify-center text-2xl">${b.emoji || '🎁'}</span>
+                ${bd.savingsSYP > 0 ? `<span class="bg-brandGreen text-white text-[11px] font-black px-2.5 py-1 rounded-full">${t('saveLabel')} ${formatPrimaryPrice(bd.savingsSYP)}</span>` : ''}
+              </div>
+              <h4 class="text-base sm:text-lg font-black text-slate-900">${name}</h4>
+              <ul class="space-y-1 text-xs text-slate-600 font-semibold">
+                ${bd.includedProds.map((p) => `<li class="flex items-center gap-1.5"><span class="text-brandGreen font-black">✓</span><span>${state.lang === 'ar' ? p.nameAr : p.nameEn}</span></li>`).join('')}
+              </ul>
+            </div>
+            <div class="pt-3 border-t border-yellow-200 flex items-center justify-between gap-2">
+              <div>
+                <p class="text-base font-black text-brandRed">${formatPrimaryPrice(bd.finalSYP)}</p>
+                <p class="text-[11px] font-bold text-slate-500">${formatSecondaryPrice(bd.finalSYP)}</p>
+              </div>
+              ${qty > 0
+                ? `<div class="flex items-center gap-2 bg-brandRed text-white rounded-xl px-2 py-1.5"><button type="button" onclick="updateCart('${b.id}', -1)" class="w-7 h-7 rounded-lg bg-white/20 font-black">−</button><span class="font-black text-sm">${qty}</span><button type="button" onclick="updateCart('${b.id}', 1)" class="w-7 h-7 rounded-lg bg-white/20 font-black">+</button></div>`
+                : `<button type="button" onclick="updateCart('${b.id}', 1)" class="px-4 py-2.5 rounded-xl bg-brandRed hover:bg-brandRedDark text-white font-extrabold text-xs sm:text-sm">+ ${t('addBundle')}</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function buildProductCardHTML(p) {
+      const pr = computeProductPrices(p);
+      const out = Number(p.stock) <= 0;
+      const qty = state.cart[p.id] || 0;
+      const name = state.lang === 'ar' ? p.nameAr : p.nameEn;
+      const cat = state.categories.find((c) => c.id === p.categoryId);
+      const catLabel = cat ? (state.lang === 'ar' ? cat.ar : cat.en) : '';
+
+      return `
+        <div class="bg-white rounded-3xl border ${out ? 'border-slate-200 opacity-85' : 'border-slate-200 hover:border-brandGreen/60 hover:shadow-md'} p-3.5 sm:p-4 flex flex-col justify-between gap-3 transition relative overflow-hidden">
+          ${pr.discountPercent > 0 && !out ? `<span class="absolute top-3 start-3 z-10 bg-brandRed text-white text-[11px] font-black px-2.5 py-0.5 rounded-full">-${pr.discountPercent}%</span>` : ''}
+          ${out ? `<span class="absolute top-3 start-3 z-10 bg-slate-900/85 text-brandYellow text-[11px] font-black px-2.5 py-1 rounded-full">${t('outOfStock')}</span>` : ''}
+          <div class="space-y-2.5">
+            <div class="w-full h-28 sm:h-32 rounded-2xl ${p.bg || 'bg-slate-50'} flex items-center justify-center overflow-hidden ${out ? 'grayscale' : ''}">
+              ${p.image ? `<img src="${p.image}" alt="${name}" class="w-full h-full object-cover" onerror="this.style.display='none'" />` : `<span class="text-5xl select-none">${p.emoji || '🛒'}</span>`}
+            </div>
+            <div>
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-[10px] font-extrabold text-brandGreen bg-green-50 px-2 py-0.5 rounded-full truncate">${catLabel}</span>
+                <span class="text-[10px] font-bold text-slate-400 truncate">${p.unit || ''}</span>
+              </div>
+              <h4 class="text-xs sm:text-sm font-black text-slate-900 mt-1.5 leading-snug line-clamp-2">${name}</h4>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-100 space-y-2.5">
+            <div>
+              ${pr.discountPercent > 0 ? `<span class="text-[11px] text-slate-400 line-through font-bold me-1">${formatPrimaryPrice(pr.baseSYP)}</span>` : ''}
+              <p class="text-sm sm:text-base font-black text-brandRed leading-tight">${formatPrimaryPrice(pr.finalSYP)}</p>
+              <p class="text-[11px] font-bold text-slate-400">${formatSecondaryPrice(pr.finalSYP)}</p>
+            </div>
+            ${out
+              ? `<button type="button" disabled class="w-full py-2.5 rounded-xl bg-slate-100 text-slate-400 font-extrabold text-xs cursor-not-allowed">${t('outOfStock')}</button>`
+              : qty > 0
+                ? `<div class="flex items-center justify-between bg-brandGreen text-white rounded-xl p-1"><button type="button" onclick="updateCart('${p.id}', -1)" class="w-8 h-8 rounded-lg bg-white/20 font-black">−</button><span class="font-black text-sm">${qty}</span><button type="button" onclick="updateCart('${p.id}', 1)" class="w-8 h-8 rounded-lg bg-white/20 font-black">+</button></div>`
+                : `<button type="button" onclick="updateCart('${p.id}', 1)" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-brandGreen text-white font-extrabold text-xs sm:text-sm transition">+ ${t('addBtn')}</button>`
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    function renderOffersSection() {
+      const wrap = document.getElementById('offers-wrapper');
+      const offerProds = state.products.filter((p) => Number(p.discountPercent || 0) > 0);
+      if (offerProds.length === 0) { wrap.classList.add('hidden'); return; }
+      wrap.classList.remove('hidden');
+      document.getElementById('offers-grid').innerHTML = offerProds.map(buildProductCardHTML).join('');
+    }
+
+    /* PRODUCTS GRID & PAGINATION */
+    function getFilteredProducts() {
+      const q = state.search.trim().toLowerCase();
+      return state.products.filter((p) => {
+        if (state.selectedCategory !== 'all' && p.categoryId !== state.selectedCategory) return false;
+        if (!q) return true;
+        const cat = state.categories.find((c) => c.id === p.categoryId);
+        const catTxt = cat ? `${cat.ar} ${cat.en}`.toLowerCase() : '';
+        return (p.nameAr || '').toLowerCase().includes(q) || (p.nameEn || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q) || catTxt.includes(q);
+      });
+    }
+
+    function renderProductsGrid() {
+      const filtered = getFilteredProducts();
+      const grid = document.getElementById('products-grid');
+      const emptyEl = document.getElementById('empty-search');
+      const pagBar = document.getElementById('pagination-bar');
+      const catBadge = document.getElementById('active-cat-badge');
+
+      document.getElementById('catalog-count').textContent = `${filtered.length} ${t('productsCount')}`;
+      if (state.selectedCategory !== 'all') {
+        const c = state.categories.find((x) => x.id === state.selectedCategory);
+        if (c) { catBadge.textContent = `${c.icon} ${state.lang === 'ar' ? c.ar : c.en}`; catBadge.classList.remove('hidden'); }
+      } else catBadge.classList.add('hidden');
+
+      if (filtered.length === 0) {
+        grid.innerHTML = ''; emptyEl.classList.remove('hidden'); pagBar.classList.add('hidden'); return;
+      }
+      emptyEl.classList.add('hidden');
+      const batch = filtered.slice(0, state.visibleLimit);
+      grid.innerHTML = batch.map(buildProductCardHTML).join('');
+
+      if (filtered.length > batch.length) {
+        pagBar.classList.remove('hidden');
+        document.getElementById('pagination-info').textContent = `${t('showingText')} ${batch.length} ${t('ofText')} ${filtered.length} ${t('productsCount')}`;
+        document.getElementById('btn-load-more').textContent = t('loadMoreBtn');
+      } else pagBar.classList.add('hidden');
+    }
+
+    function loadMoreProducts() { state.visibleLimit += 12; renderProductsGrid(); }
+    function handleSearch(val) { state.search = val; state.visibleLimit = 12; document.getElementById('btn-clear-search').classList.toggle('hidden', !val.trim()); renderProductsGrid(); }
+    function clearSearch() { state.search = ''; document.getElementById('search-input').value = ''; document.getElementById('btn-clear-search').classList.add('hidden'); renderProductsGrid(); }
+    function resetCatalogFilters() { state.selectedCategory = 'all'; clearSearch(); renderCategoriesBar(); }
+
+    /* 8. CART, CHECKOUT & INVOICE */
+    function updateCart(id, delta) {
+      const item = findCatalogItem(id);
+      if (!item) return;
+      const next = (state.cart[id] || 0) + delta;
+      if (delta > 0 && !item.isBundle) {
+        if (Number(item.stock) <= 0) { showToast(t('outOfStock'), 'error'); return; }
+        if (next > Number(item.stock)) { showToast(t('maxStockToast'), 'error'); return; }
+      }
+      if (next <= 0) delete state.cart[id];
+      else { state.cart[id] = next; if (delta > 0 && next === 1) showToast(t('toastAdded')); }
+      renderBundlesSection(); renderOffersSection(); renderProductsGrid(); renderCartIndicators(); renderCartDrawer();
+    }
+
+    function renderCartIndicators() {
+      const totals = getCartTotals();
+      document.getElementById('header-cart-badge').textContent = totals.itemCount;
+      const mobBar = document.getElementById('mobile-cart-bar');
+      if (totals.hasOrderContent) {
+        mobBar.classList.remove('hidden');
+        document.getElementById('mobile-bar-count').textContent = totals.itemCount;
+        document.getElementById('mobile-bar-label').textContent = t('mobileBarLabel');
+        document.getElementById('mobile-bar-total').textContent = formatPrimaryPrice(totals.totalSYP);
+      } else mobBar.classList.add('hidden');
+    }
+
+    function renderCartDrawer() {
+      const totals = getCartTotals();
+      document.getElementById('cart-drawer-title').textContent = t('cartTitle');
+      document.getElementById('cart-empty-text').textContent = t('cartEmptyText');
+      document.getElementById('cart-empty-btn').textContent = t('cartEmptyBtn');
+      const emptyEl = document.getElementById('cart-empty-state');
+      const wrapEl = document.getElementById('cart-content-wrapper');
+      if (!totals.hasOrderContent) { emptyEl.classList.remove('hidden'); wrapEl.classList.add('hidden'); return; }
+      emptyEl.classList.add('hidden'); wrapEl.classList.remove('hidden');
+
+      document.getElementById('cart-items-list').innerHTML = totals.items.map((it) => `
+        <div class="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <div class="min-w-0">
+            <p class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">${state.lang === 'ar' ? it.nameAr : it.nameEn}</p>
+            <p class="text-xs font-black text-brandRed">${formatPrimaryPrice(it.lineSYP)}</p>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" onclick="updateCart('${it.id}', -1)" class="w-7 h-7 rounded-lg bg-white border border-slate-300 font-black">−</button>
+            <span class="font-black text-xs min-w-[18px] text-center">${it.qty}</span>
+            <button type="button" onclick="updateCart('${it.id}', 1)" class="w-7 h-7 rounded-lg bg-brandGreen text-white font-black">+</button>
+          </div>
+        </div>
+      `).join('');
+
+      const qlBox = document.getElementById('cart-quicklist-box');
+      if (state.quickList.trim()) {
+        qlBox.classList.remove('hidden');
+        document.getElementById('cart-ql-title').textContent = t('cartQlTitle');
+        document.getElementById('cart-ql-remove').textContent = t('cartQlRemove');
+        document.getElementById('cart-ql-text').textContent = state.quickList.trim();
+      } else qlBox.classList.add('hidden');
+
+      document.getElementById('lbl-promo-code').textContent = t('promoLabel');
+      document.getElementById('btn-apply-promo').textContent = t('promoApply');
+      const promoBadge = document.getElementById('promo-applied-badge');
+      if (state.appliedPromo && state.appliedPromo.active) {
+        promoBadge.classList.remove('hidden');
+        document.getElementById('promo-applied-text').textContent = `✓ ${state.appliedPromo.code} (-${state.appliedPromo.discountPercent}%)`;
+      } else promoBadge.classList.add('hidden');
+
+      document.getElementById('summary-subtotal-label').textContent = t('subtotal');
+      document.getElementById('summary-subtotal-val').textContent = formatPrimaryPrice(totals.subtotalSYP);
+      const discRow = document.getElementById('summary-discount-row');
+      if (totals.discountSYP > 0) {
+        discRow.classList.remove('hidden');
+        document.getElementById('summary-discount-label').textContent = `${t('discount')} (${state.appliedPromo.code})`;
+        document.getElementById('summary-discount-val').textContent = `- ${formatPrimaryPrice(totals.discountSYP)}`;
+      } else discRow.classList.add('hidden');
+
+      document.getElementById('summary-delivery-label').textContent = t('delivery');
+      document.getElementById('summary-delivery-val').textContent = totals.deliverySYP === 0 ? t('freeLabel') : formatPrimaryPrice(totals.deliverySYP);
+      document.getElementById('summary-total-label').textContent = t('grandTotal');
+      document.getElementById('summary-total-syp').textContent = formatSYP(totals.totalSYP);
+      document.getElementById('summary-total-usd').textContent = `${formatUSD(totals.totalSYP)} USD`;
+
+      document.getElementById('checkout-heading').textContent = t('checkoutHeading');
+      document.getElementById('lbl-cust-name').textContent = t('custName');
+      document.getElementById('lbl-cust-phone').textContent = t('custPhone');
+      document.getElementById('lbl-cust-address').textContent = t('custAddress');
+      document.getElementById('btn-gps-text').textContent = t('gpsBtn');
+      document.getElementById('lbl-payment-method').textContent = t('paymentMethod');
+      document.getElementById('pay-syp-title').textContent = t('paySypTitle');
+      document.getElementById('pay-syp-sub').textContent = t('paySypSub');
+      document.getElementById('pay-syp-amount').textContent = formatSYP(totals.totalSYP);
+      document.getElementById('pay-usd-title').textContent = t('payUsdTitle');
+      document.getElementById('pay-usd-sub').textContent = t('payUsdSub');
+      document.getElementById('pay-usd-amount').textContent = formatUSD(totals.totalSYP);
+      document.getElementById('btn-complete-order-text').textContent = t('completeOrder');
+    }
+
+    function openCartDrawer() { renderCartDrawer(); document.getElementById('cart-overlay').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+    function closeCartDrawer() { document.getElementById('cart-overlay').classList.add('hidden'); document.body.style.overflow = ''; }
+    function attachQuickList() {
+      state.quickList = document.getElementById('quick-list-input').value.trim();
+      document.getElementById('ql-status').textContent = state.quickList ? t('qlAttachedMsg') : '';
+      renderCartIndicators(); renderCartDrawer();
+      if (state.quickList) showToast(t('qlAttachedMsg'));
+    }
+    function clearQuickList() { state.quickList = ''; document.getElementById('quick-list-input').value = ''; document.getElementById('ql-status').textContent = ''; renderCartIndicators(); renderCartDrawer(); }
+    function applyPromoCode() {
+      const code = document.getElementById('promo-input').value.trim().toUpperCase();
+      const found = state.promos.find((p) => p.code.toUpperCase() === code && p.active);
+      if (!found) { showToast(t('promoInvalid'), 'error'); return; }
+      state.appliedPromo = found; showToast(`${t('promoApplied')} ${found.discountPercent}%!`);
+      renderCartDrawer(); renderCartIndicators();
+    }
+    function removePromoCode() { state.appliedPromo = null; document.getElementById('promo-input').value = ''; renderCartDrawer(); renderCartIndicators(); }
+    function getCustomerGPS() {
+      const el = document.getElementById('gps-status-msg');
+      el.classList.remove('hidden'); el.textContent = t('gpsLoading');
+      if (!navigator.geolocation) { el.textContent = t('gpsFallback'); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          state.customerGpsUrl = `https://www.google.com/maps?q=${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`;
+          el.textContent = t('gpsSuccess');
+          const addr = document.getElementById('cust-address');
+          if (!addr.value.trim()) addr.value = state.lang === 'ar' ? 'تم تحديد الموقع عبر GPS' : 'Located via GPS';
+        },
+        () => { el.textContent = t('gpsFallback'); },
+        { timeout: 7000 }
+      );
+    }
+
+    function submitOrder(e) {
+      e.preventDefault();
+      const totals = getCartTotals();
+      if (!totals.hasOrderContent) { showToast(t('toastEmptyOrder'), 'error'); return; }
+      const now = new Date();
+      const orderObj = {
+        orderNumber: `WM-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        timestamp: now.toLocaleString(state.lang === 'ar' ? 'ar-SY' : 'en-US'),
+        customer: {
+          name: document.getElementById('cust-name').value.trim(),
+          phone: document.getElementById('cust-phone').value.trim(),
+          address: document.getElementById('cust-address').value.trim(),
+          gpsUrl: state.customerGpsUrl,
+        },
+        paymentCurrency: document.querySelector('input[name="paymentCurrency"]:checked').value,
+        promoCode: state.appliedPromo ? state.appliedPromo.code : null,
+        items: totals.items.map((it) => ({ id: it.id, nameAr: it.nameAr, nameEn: it.nameEn, qty: it.qty, unitPriceSYP: it.unitPriceSYP, lineSYP: it.lineSYP, isBundle: it.isBundle })),
+        quickList: state.quickList.trim(),
+        subtotalSYP: totals.subtotalSYP,
+        discountSYP: totals.discountSYP,
+        deliverySYP: totals.deliverySYP,
+        totalSYP: totals.totalSYP,
+        totalCostSYP: totals.totalCostSYP,
+        netProfitSYP: totals.netProfitSYP,
+        exchangeRate: getRate(),
+      };
+
+      totals.items.forEach((it) => {
+        if (!it.isBundle) {
+          const p = state.products.find((x) => x.id === it.id);
+          if (p) { p.stock = Math.max(0, Number(p.stock) - it.qty); fsSet('products', p.id, { stock: p.stock }); }
+        }
+      });
+
+      state.orders.push(orderObj);
+      persist();
+      fsSet('orders', orderObj.orderNumber, orderObj);
+      state.lastOrder = orderObj;
+
+      closeCartDrawer();
+      renderInvoiceModal();
+      document.getElementById('invoice-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      renderAll();
+    }
+
+    function renderInvoiceModal() {
+      const o = state.lastOrder; if (!o) return;
+      document.getElementById('inv-subtitle').textContent = t('invSubtitle');
+      document.getElementById('inv-badge-label').textContent = t('invBadge');
+      document.getElementById('inv-order-number').textContent = `#${o.orderNumber}`;
+      document.getElementById('inv-lbl-date').textContent = t('invDate');
+      document.getElementById('inv-val-date').textContent = o.timestamp;
+      document.getElementById('inv-lbl-customer').textContent = t('invCustomer');
+      document.getElementById('inv-val-customer').textContent = o.customer.name;
+      document.getElementById('inv-lbl-phone').textContent = t('invPhone');
+      document.getElementById('inv-val-phone').textContent = o.customer.phone;
+      document.getElementById('inv-lbl-address').textContent = t('invAddress');
+      document.getElementById('inv-val-address').textContent = o.customer.address;
+      const gps = document.getElementById('inv-val-gps');
+      if (o.customer.gpsUrl) { gps.href = o.customer.gpsUrl; gps.textContent = t('invGpsLink'); gps.classList.remove('hidden'); }
+      else gps.classList.add('hidden');
+
+      document.getElementById('inv-th-item').textContent = t('invThItem');
+      document.getElementById('inv-th-qty').textContent = t('invThQty');
+      document.getElementById('inv-th-price').textContent = t('invThPrice');
+      document.getElementById('inv-th-total').textContent = t('invThTotal');
+      document.getElementById('inv-items-tbody').innerHTML = o.items.map((it) => `
+        <tr><td class="py-2 font-bold">${state.lang === 'ar' ? it.nameAr : it.nameEn}</td><td class="py-2 text-center font-extrabold">${it.qty}</td><td class="py-2 text-end">${formatPrimaryPrice(it.unitPriceSYP)}</td><td class="py-2 text-end font-extrabold">${formatPrimaryPrice(it.lineSYP)}</td></tr>
+      `).join('');
+
+      const ql = document.getElementById('inv-quicklist-wrap');
+      if (o.quickList) { ql.classList.remove('hidden'); document.getElementById('inv-ql-title').textContent = t('cartQlTitle'); document.getElementById('inv-ql-content').textContent = o.quickList; }
+      else ql.classList.add('hidden');
+
+      document.getElementById('inv-lbl-subtotal').textContent = t('subtotal');
+      document.getElementById('inv-val-subtotal').textContent = formatPrimaryPrice(o.subtotalSYP);
+      const disc = document.getElementById('inv-discount-row');
+      if (o.discountSYP > 0) { disc.classList.remove('hidden'); document.getElementById('inv-lbl-discount').textContent = `${t('discount')} (${o.promoCode})`; document.getElementById('inv-val-discount').textContent = `- ${formatPrimaryPrice(o.discountSYP)}`; }
+      else disc.classList.add('hidden');
+
+      document.getElementById('inv-lbl-delivery').textContent = t('delivery');
+      document.getElementById('inv-val-delivery').textContent = o.deliverySYP === 0 ? t('freeLabel') : formatPrimaryPrice(o.deliverySYP);
+      document.getElementById('inv-lbl-grandtotal').textContent = t('grandTotal');
+      document.getElementById('inv-val-total-syp').textContent = formatSYP(o.totalSYP);
+      document.getElementById('inv-val-total-usd').textContent = `$${(o.totalSYP / o.exchangeRate).toFixed(2)} USD`;
+      document.getElementById('inv-lbl-paymethod').textContent = t('invPayLabel');
+      document.getElementById('inv-val-paymethod').textContent = o.paymentCurrency === 'SYP' ? `${t('paySypTitle')} — ${t('paySypSub')}` : `${t('payUsdTitle')} — ${t('payUsdSub')}`;
+      document.getElementById('inv-btn-whatsapp').textContent = t('invBtnWhatsapp');
+      document.getElementById('inv-btn-print').textContent = t('invBtnPrint');
+      document.getElementById('inv-btn-new').textContent = t('invBtnNew');
+    }
+
+    function sendOrderViaWhatsApp() {
+      const o = state.lastOrder; if (!o) return;
+      const isAr = state.lang === 'ar';
+      const lines = [
+        isAr ? `🛒 *طلب جديد من متجر Welmrt - ويلمرت*` : `🛒 *New Order from Welmrt*`,
+        `#${o.orderNumber} | ${o.timestamp}`,
+        `👤 ${o.customer.name} | 📞 ${o.customer.phone}`,
+        `📍 ${o.customer.address}`,
+        o.customer.gpsUrl ? `🗺️ ${o.customer.gpsUrl}` : '',
+        `---`,
+        ...o.items.map((it, i) => `${i + 1}. ${isAr ? it.nameAr : it.nameEn} × ${it.qty} = ${Math.round(it.lineSYP).toLocaleString('en-US')}`),
+        o.quickList ? `📝 ${o.quickList}` : '',
+        `---`,
+        `💰 *${Math.round(o.totalSYP).toLocaleString('en-US')} ${isAr ? 'ل.س جديدة' : 'New SYP'}* ($${(o.totalSYP / o.exchangeRate).toFixed(2)})`,
+        `💵 ${o.paymentCurrency}`
+      ].filter(Boolean);
+      const waNum = (state.settings.whatsapp || '963945810376').replace(/[^0-9]/g, '');
+      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+    }
+    function printInvoice() { document.body.classList.remove('print-qr'); document.body.classList.add('print-invoice'); window.print(); }
+    function startNewOrder() {
+      state.cart = {}; state.quickList = ''; state.appliedPromo = null; state.customerGpsUrl = ''; state.lastOrder = null;
+      document.getElementById('checkout-form').reset();
+      document.getElementById('invoice-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+      renderAll();
+    }
+
+    /* 9. AI ASSISTANT ("ويلمرت") */
+    function dismissAIGreeting() { document.getElementById('ai-greeting-bubble').classList.add('hidden'); }
+    function openAIChat() {
+      state.aiOpen = true;
+      document.getElementById('ai-greeting-bubble').classList.add('hidden');
+      const p = document.getElementById('ai-chat-panel');
+      p.classList.remove('hidden'); p.classList.add('flex');
+      if (!state.aiWelcomed) { state.aiWelcomed = true; appendAIMessage('model', t('aiWelcome'), []); }
+      document.getElementById('ai-input').focus();
+    }
+    function closeAIChat() { state.aiOpen = false; const p = document.getElementById('ai-chat-panel'); p.classList.add('hidden'); p.classList.remove('flex'); }
+    function toggleAIChat() { if (state.aiOpen) closeAIChat(); else openAIChat(); }
+    function renderAIQuickPrompts() {
+      document.getElementById('ai-quick-prompts').innerHTML = I18N[state.lang].aiPrompts.map((p) =>
+        `<button type="button" onclick="triggerQuickAIPrompt('${p.replace(/'/g, "\\'")}')" class="shrink-0 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-[11px] font-bold text-slate-700">${p}</button>`
+      ).join('');
+    }
+    function triggerQuickAIPrompt(txt) { document.getElementById('ai-input').value = txt; sendAIMessage(new Event('submit')); }
+    function appendAIMessage(role, text, itemIds = []) {
+      const box = document.getElementById('ai-messages');
+      const isUser = role === 'user';
+      const cards = itemIds.slice(0, 4).map((id) => {
+        const it = findCatalogItem(id); if (!it) return '';
+        const out = !it.isBundle && Number(it.stock) <= 0;
+        return `
+          <div class="mt-2 bg-white border border-slate-200 rounded-2xl p-2 flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="text-xs font-extrabold text-slate-900 truncate">${state.lang === 'ar' ? it.nameAr : it.nameEn}</p>
+              <p class="text-[11px] font-black text-brandRed">${formatPrimaryPrice(it.unitPriceSYP)}</p>
+            </div>
+            ${out ? `<span class="text-[10px] font-black bg-red-100 text-brandRed px-2 py-1 rounded-lg">${t('outOfStock')}</span>`
+                  : `<button type="button" onclick="updateCart('${it.id}', 1)" class="px-2.5 py-1.5 rounded-xl bg-brandGreen text-white text-[11px] font-extrabold">+ ${t('addBtn')}</button>`}
+          </div>`;
+      }).join('');
+      const el = document.createElement('div');
+      el.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+      el.innerHTML = `<div class="max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm ${isUser ? 'bg-brandRed text-white font-semibold' : 'bg-white border border-slate-200 text-slate-800'}"><div>${text}</div>${cards}</div>`;
+      box.appendChild(el);
+      box.scrollTop = box.scrollHeight;
+    }
+    function normalizeAr(s) { return (s || '').toLowerCase().replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[؟?!.,]/g, ' ').trim(); }
+    function smartLocalAI(raw) {
+      const q = normalizeAr(raw);
+      const isAr = state.lang === 'ar';
+      if (/(عرض|عروض|خصم|offer|deal|discount)/i.test(q)) {
+        const off = state.products.filter((p) => Number(p.discountPercent || 0) > 0 && Number(p.stock) > 0);
+        if (off.length) return { text: isAr ? '🔥 هي أقوى عروض اليوم بويلمرت:' : "🔥 Today's hottest deals:", ids: off.map((x) => x.id) };
+      }
+      const cat = state.categories.find((c) => q.includes(normalizeAr(c.ar)) || q.includes(normalizeAr(c.en)));
+      if (cat) {
+        const list = state.products.filter((p) => p.categoryId === cat.id);
+        return { text: isAr ? `منتجات قسم "${cat.ar}" ${cat.icon}:` : `Items in "${cat.en}" ${cat.icon}:`, ids: list.map((x) => x.id) };
+      }
+      const stop = ['عندكم', 'في', 'شو', 'بدي', 'هل', 'do', 'you', 'have', 'show', 'me'];
+      const tokens = q.split(/\s+/).filter((w) => w.length >= 2 && !stop.includes(w));
+      const matched = state.products.filter((p) => tokens.some((tk) => normalizeAr(`${p.nameAr} ${p.nameEn}`).includes(tk)));
+      if (matched.length) {
+        if (matched.every((p) => Number(p.stock) <= 0)) {
+          return { text: isAr ? `للأسف "${matched[0].nameAr}" نفذت كميته حالياً 😔` : `Sorry, "${matched[0].nameEn}" is out of stock 😔`, ids: [matched[0].id] };
+        }
+        return { text: isAr ? 'أكيد موجود عنا بويلمرت! 👇' : 'Yes! Available right now 👇', ids: matched.map((x) => x.id) };
+      }
+      return { text: isAr ? 'اسألني عن أي منتج (زيت، رز، شاي، منظفات) أو عن "العروض"!' : 'Ask me about any product (oil, rice, tea, detergents) or "offers"!', ids: [] };
+    }
+    function sendAIMessage(e) {
+      if (e) e.preventDefault();
+      const inp = document.getElementById('ai-input');
+      const txt = inp.value.trim(); if (!txt) return;
+      inp.value = ''; appendAIMessage('user', txt, []);
+      const res = smartLocalAI(txt);
+      setTimeout(() => appendAIMessage('model', res.text, res.ids), 150);
+    }
+
+    /* 10. SECRET ADMIN ACCESS & 6-TAB CRUD */
+    let logoTapCount = 0, logoTapTimer = null;
+    function handleLogoTap() {
+      logoTapCount++; clearTimeout(logoTapTimer);
+      if (logoTapCount >= 5) { logoTapCount = 0; openPinModal(); return; }
+      logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 3000);
+    }
+    function openPinModal() {
+      document.getElementById('pin-cancel-btn').textContent = t('pinCancel');
+      document.getElementById('pin-submit-btn').textContent = t('pinSubmit');
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-error').classList.add('hidden');
+      document.getElementById('pin-modal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('pin-input').focus(), 60);
+    }
+    function closePinModal() { document.getElementById('pin-modal').classList.add('hidden'); }
+    function verifyAdminPin(e) {
+      e.preventDefault();
+      if (document.getElementById('pin-input').value.trim() === String(state.settings.adminPin || '1234')) {
+        closePinModal(); openAdminModal();
+      } else {
+        const err = document.getElementById('pin-error'); err.textContent = t('pinErr'); err.classList.remove('hidden');
+      }
+    }
+    function openAdminModal() { renderAdminUI(); switchAdminTab(state.activeAdminTab); document.getElementById('admin-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+    function closeAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); document.body.style.overflow = ''; renderAll(); }
+    function switchAdminTab(tab) {
+      state.activeAdminTab = tab;
+      ['dashboard', 'products', 'categories', 'bundles', 'ads', 'settings'].forEach((id) => {
+        document.getElementById(`admin-tab-${id}`).classList.toggle('hidden', id !== tab);
+        const btn = document.getElementById(`tab-btn-${id}`);
+        btn.classList.toggle('border-brandRed', id === tab);
+        btn.classList.toggle('text-brandRed', id === tab);
+        btn.classList.toggle('border-transparent', id !== tab);
+        btn.classList.toggle('text-slate-500', id !== tab);
+      });
+    }
+
+    function renderAdminUI() {
+      document.getElementById('admin-title').textContent = t('adminTitle');
+      document.getElementById('admin-subtitle').textContent = t('adminSubtitle');
+      document.getElementById('admin-close-btn').textContent = t('adminClose');
+      updateCloudBadge(isCloudConnected);
+      document.getElementById('tab-btn-dashboard').textContent = t('tabDashboard');
+      document.getElementById('tab-btn-products').textContent = t('tabProducts');
+      document.getElementById('tab-btn-categories').textContent = t('tabCategories');
+      document.getElementById('tab-btn-bundles').textContent = t('tabBundles');
+      document.getElementById('tab-btn-ads').textContent = t('tabAds');
+      document.getElementById('tab-btn-settings').textContent = t('tabSettings');
+      renderAdminDashboard(); renderAdminProductsSection(); renderAdminCategories(); renderAdminBundlesAndOffers(); renderAdminAds(); renderAdminSettings();
+    }
+
+    function renderAdminDashboard() {
+      document.getElementById('stat-lbl-orders').textContent = t('statOrders');
+      document.getElementById('stat-lbl-revenue').textContent = t('statRev');
+      document.getElementById('stat-lbl-cost').textContent = t('statCost');
+      document.getElementById('stat-lbl-profit').textContent = t('statProfit');
+      let rev = 0, cost = 0, profit = 0;
+      state.orders.forEach((o) => { rev += Number(o.totalSYP || 0); cost += Number(o.totalCostSYP || 0); profit += Number(o.netProfitSYP || 0); });
+      document.getElementById('stat-val-orders').textContent = state.orders.length;
+      document.getElementById('stat-val-rev-syp').textContent = formatSYP(rev);
+      document.getElementById('stat-val-rev-usd').textContent = formatUSD(rev);
+      document.getElementById('stat-val-cost-syp').textContent = formatSYP(cost);
+      document.getElementById('stat-val-cost-usd').textContent = formatUSD(cost);
+      document.getElementById('stat-val-profit-syp').textContent = formatSYP(profit);
+      document.getElementById('stat-val-profit-usd').textContent = formatUSD(profit);
+
+      document.getElementById('alert-lowstock-title').textContent = t('alertLowTitle');
+      const low = state.products.filter((p) => Number(p.stock) <= 5);
+      document.getElementById('alert-lowstock-count').textContent = low.length;
+      document.getElementById('lowstock-list').innerHTML = low.length === 0 ? `<p class="text-xs text-slate-400 text-center py-3">${t('noLowStock')}</p>` : low.map((p) => `
+        <div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl p-3">
+          <div><p class="text-xs font-extrabold">${state.lang === 'ar' ? p.nameAr : p.nameEn}</p><p class="text-[11px] font-black text-brandRed">${t('thStock')}: ${p.stock}</p></div>
+          <button type="button" onclick="jumpToRestock('${p.barcode || ''}')" class="px-3 py-1.5 rounded-xl bg-brandRed text-white text-xs font-extrabold">${t('restockQuickBtn')}</button>
+        </div>`).join('');
+
+      document.getElementById('alert-expiry-title').textContent = t('alertExpiryTitle');
+      const exp = state.products.filter((p) => p.expiryDate && Number(p.stock) > 0 && (new Date(p.expiryDate).getTime() - Date.now() <= 30 * 86400000));
+      document.getElementById('alert-expiry-count').textContent = exp.length;
+      document.getElementById('expiry-list').innerHTML = exp.length === 0 ? `<p class="text-xs text-slate-400 text-center py-3">${t('noExpiry')}</p>` : exp.map((p) => `
+        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-2xl p-3">
+          <div><p class="text-xs font-extrabold">${state.lang === 'ar' ? p.nameAr : p.nameEn}</p><p class="text-[11px] font-bold text-amber-800">⏳ ${p.expiryDate}</p></div>
+          ${Number(p.discountPercent) >= 25 ? `<span class="px-3 py-1 rounded-xl bg-green-100 text-brandGreenDark text-[11px] font-black">${t('alreadyFlash')}</span>`
+            : `<button type="button" onclick="convertToFlashDeal('${p.id}')" class="px-3 py-1.5 rounded-xl bg-brandRed text-white text-[11px] font-extrabold">🔥 ${t('flashConvertBtn')}</button>`}
+        </div>`).join('');
+    }
+    function jumpToRestock(barcode) { switchAdminTab('products'); const i = document.getElementById('p-barcode'); i.value = barcode; checkBarcodeMatch(barcode); i.focus(); }
+    function convertToFlashDeal(id) { const p = state.products.find((x) => x.id === id); if (!p) return; p.discountPercent = 25; persist(); fsSet('products', p.id, { discountPercent: 25 }); renderAll(); showToast(t('toastFlashDone')); }
+
+    /* PRODUCTS TAB */
+    function renderAdminProductsSection() {
+      document.getElementById('prod-form-heading').textContent = t('prodFormHeading');
+      document.getElementById('btn-reset-prod-form').textContent = t('resetFormBtn');
+      document.getElementById('lbl-barcode').textContent = t('lblBarcode');
+      document.getElementById('btn-scan-barcode-text').textContent = t('btnScanBarcode');
+      document.getElementById('match-badge-text').textContent = t('matchBadge');
+      document.getElementById('btn-quick-restock').textContent = t('btnQuickRestock');
+      document.getElementById('lbl-p-name-ar').textContent = t('lblNameAr');
+      document.getElementById('lbl-p-name-en').textContent = t('lblNameEn');
+      document.getElementById('lbl-p-cat').textContent = t('lblCat');
+      document.getElementById('lbl-p-unit').textContent = t('lblUnit');
+      document.getElementById('lbl-p-stock').textContent = t('lblStock');
+      document.getElementById('lbl-p-currency').textContent = t('lblCurrency');
+      document.getElementById('lbl-usd-shield-toggle').textContent = t('lblUsdShield');
+      document.getElementById('lbl-p-cost').textContent = t('lblCost');
+      document.getElementById('lbl-p-price').textContent = t('lblPrice');
+      document.getElementById('lbl-p-expiry').textContent = t('lblExpiry');
+      document.getElementById('lbl-p-image').textContent = t('lblImage');
+      document.getElementById('lbl-upload-photo').textContent = t('lblUploadPhoto');
+      document.getElementById('btn-save-product').textContent = t('btnSaveProduct');
+
+      const sel = document.getElementById('p-cat');
+      const prev = sel.value;
+      sel.innerHTML = state.categories.map((c) => `<option value="${c.id}">${c.icon} ${state.lang === 'ar' ? c.ar : c.en}</option>`).join('');
+      if (prev && state.categories.some((c) => c.id === prev)) sel.value = prev;
+
+      document.getElementById('inv-table-heading').textContent = t('invTableHeading');
+      document.getElementById('admin-prod-search').placeholder = t('adminSearchPlaceholder');
+      document.getElementById('th-adm-prod').textContent = t('thProd');
+      document.getElementById('th-adm-cat').textContent = t('thCat');
+      document.getElementById('th-adm-barcode').textContent = t('thBarcode');
+      document.getElementById('th-adm-stock').textContent = t('thStock');
+      document.getElementById('th-adm-price').textContent = t('thPrice');
+      document.getElementById('th-adm-actions').textContent = t('thActions');
+      renderAdminProductsTable();
+    }
+
+    function renderAdminProductsTable() {
+      const q = (document.getElementById('admin-prod-search').value || '').trim().toLowerCase();
+      const list = state.products.filter((p) => !q || (p.nameAr || '').toLowerCase().includes(q) || (p.nameEn || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q));
+      document.getElementById('inv-table-count').textContent = `(${list.length})`;
+      document.getElementById('admin-products-tbody').innerHTML = list.map((p) => {
+        const pr = computeProductPrices(p);
+        const cat = state.categories.find((c) => c.id === p.categoryId);
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-bold">${p.emoji || '📦'} ${state.lang === 'ar' ? p.nameAr : p.nameEn}</td>
+            <td class="p-3 text-center">${cat ? (state.lang === 'ar' ? cat.ar : cat.en) : '-'}</td>
+            <td class="p-3 text-center font-mono">${p.barcode || '-'}</td>
+            <td class="p-3 text-center font-black">${p.stock}</td>
+            <td class="p-3 text-center font-extrabold text-brandRed">${formatSYP(pr.finalSYP)}</td>
+            <td class="p-3 text-center">
+              <button type="button" onclick="editProductInForm('${p.id}')" class="px-2 py-1 rounded bg-slate-100">✏️</button>
+              <button type="button" onclick="deleteAdminProduct('${p.id}')" class="px-2 py-1 rounded bg-red-50 text-brandRed">🗑️</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function checkBarcodeMatch(codeVal) {
+      const code = (codeVal || '').trim();
+      const banner = document.getElementById('barcode-match-banner');
+      const found = code ? state.products.find((p) => (p.barcode || '').trim() === code) : null;
+      if (found) {
+        state.matchedBarcodeProduct = found;
+        banner.classList.remove('hidden');
+        document.getElementById('match-prod-name').textContent = state.lang === 'ar' ? found.nameAr : found.nameEn;
+        document.getElementById('match-prod-stock').textContent = `${t('matchStockPrefix')} ${found.stock}`;
+        populateProductForm(found);
+      } else { state.matchedBarcodeProduct = null; banner.classList.add('hidden'); }
+    }
+    function executeQuickRestock() {
+      const target = state.matchedBarcodeProduct; if (!target) return;
+      const qty = Number(document.getElementById('quick-restock-qty').value) || 0; if (qty <= 0) return;
+      target.stock = Number(target.stock || 0) + qty;
+      persist(); fsSet('products', target.id, { stock: target.stock });
+      document.getElementById('p-stock').value = target.stock;
+      document.getElementById('match-prod-stock').textContent = `${t('matchStockPrefix')} ${target.stock}`;
+      renderAll(); showToast(`${t('toastRestocked')} (+${qty})`);
+    }
+    function populateProductForm(p) {
+      document.getElementById('p-edit-id').value = p.id || '';
+      document.getElementById('p-barcode').value = p.barcode || '';
+      document.getElementById('p-name-ar').value = p.nameAr || '';
+      document.getElementById('p-name-en').value = p.nameEn || '';
+      document.getElementById('p-cat').value = p.categoryId || '';
+      document.getElementById('p-unit').value = p.unit || '';
+      document.getElementById('p-stock').value = p.stock ?? 0;
+      document.getElementById('p-usd-shield').checked = p.priceCurrency === 'USD';
+      document.getElementById('p-cost').value = p.costPrice ?? 0;
+      document.getElementById('p-price').value = p.sellingPrice ?? 0;
+      document.getElementById('p-expiry').value = p.expiryDate || '';
+      document.getElementById('p-image-url').value = (p.image && !p.image.startsWith('data:')) ? p.image : '';
+      state.uploadedImageBase64 = p.image || '';
+    }
+    function editProductInForm(id) { const p = state.products.find((x) => x.id === id); if (p) { populateProductForm(p); document.getElementById('prod-form-heading').scrollIntoView({ behavior: 'smooth' }); } }
+    function resetProductForm() { document.getElementById('product-admin-form').reset(); document.getElementById('p-edit-id').value = ''; document.getElementById('p-barcode').value = ''; document.getElementById('barcode-match-banner').classList.add('hidden'); state.uploadedImageBase64 = ''; state.matchedBarcodeProduct = null; }
+    function handleProductPhotoUpload(e) {
+      const file = e.target.files && e.target.files[0]; if (!file) return;
+      const r = new FileReader();
+      r.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          const s = Math.min(1, 320 / img.width);
+          c.width = img.width * s; c.height = img.height * s;
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          state.uploadedImageBase64 = c.toDataURL('image/jpeg', 0.75);
+          const prev = document.getElementById('p-image-preview'); prev.src = state.uploadedImageBase64; prev.classList.remove('hidden');
+        };
+        img.src = ev.target.result;
+      };
+      r.readAsDataURL(file);
+    }
+    function saveProductFromForm(e) {
+      e.preventDefault();
+      const editId = document.getElementById('p-edit-id').value.trim();
+      const catId = document.getElementById('p-cat').value;
+      const cat = state.categories.find((c) => c.id === catId);
+      const data = {
+        barcode: document.getElementById('p-barcode').value.trim(),
+        nameAr: document.getElementById('p-name-ar').value.trim(),
+        nameEn: document.getElementById('p-name-en').value.trim(),
+        categoryId: catId,
+        unit: document.getElementById('p-unit').value.trim() || '1 قطعة',
+        stock: Number(document.getElementById('p-stock').value) || 0,
+        priceCurrency: document.getElementById('p-usd-shield').checked ? 'USD' : 'SYP',
+        costPrice: Number(document.getElementById('p-cost').value) || 0,
+        sellingPrice: Number(document.getElementById('p-price').value) || 0,
+        expiryDate: document.getElementById('p-expiry').value || '',
+        image: document.getElementById('p-image-url').value.trim() || state.uploadedImageBase64 || '',
+        emoji: cat ? cat.icon : '🛒',
+        bg: 'bg-slate-50',
+      };
+      if (editId) {
+        const idx = state.products.findIndex((p) => p.id === editId);
+        if (idx !== -1) { state.products[idx] = { ...state.products[idx], ...data }; fsSet('products', editId, state.products[idx]); }
+      } else {
+        const np = { id: `p-${Date.now()}`, discountPercent: 0, ...data };
+        state.products.unshift(np); fsSet('products', np.id, np);
+      }
+      persist(); resetProductForm(); renderAll(); showToast(t('toastSaved'));
+    }
+    async function deleteAdminProduct(id) {
+      if (!(await askConfirm(t('confirmDeleteProd')))) return;
+      state.products = state.products.filter((p) => p.id !== id);
+      persist(); fsDelete('products', id); renderAll(); showToast(t('toastSaved'));
+    }
+
+    /* BARCODE SCANNER */
+    let scannerStream = null, scannerInterval = null;
+    async function openBarcodeScanner() {
+      document.getElementById('scanner-title').textContent = t('scannerTitle');
+      document.getElementById('scanner-status').textContent = t('scannerStatus');
+      document.getElementById('scanner-manual-btn').textContent = t('scannerApply');
+      document.getElementById('scanner-modal').classList.remove('hidden');
+      try {
+        scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const v = document.getElementById('scanner-video'); v.srcObject = scannerStream;
+        if ('BarcodeDetector' in window) {
+          const det = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'qr_code'] });
+          scannerInterval = setInterval(async () => {
+            try {
+              const codes = await det.detect(v);
+              if (codes.length > 0 && codes[0].rawValue) {
+                closeBarcodeScanner(); document.getElementById('p-barcode').value = codes[0].rawValue; checkBarcodeMatch(codes[0].rawValue);
+              }
+            } catch (_) {}
+          }, 450);
+        } else document.getElementById('scanner-status').textContent = t('scannerUnsupported');
+      } catch (_) { document.getElementById('scanner-status').textContent = t('scannerUnsupported'); }
+    }
+    function closeBarcodeScanner() { clearInterval(scannerInterval); if (scannerStream) { scannerStream.getTracks().forEach((tr) => tr.stop()); scannerStream = null; } document.getElementById('scanner-modal').classList.add('hidden'); }
+    function applyManualScannedBarcode() { const c = document.getElementById('scanner-manual-input').value.trim(); if (!c) return; closeBarcodeScanner(); document.getElementById('p-barcode').value = c; checkBarcodeMatch(c); }
+
+    /* CATEGORIES TAB */
+    function renderAdminCategories() {
+      document.getElementById('cat-form-title').textContent = t('catFormTitle');
+      document.getElementById('btn-reset-cat-form').textContent = t('resetFormBtn');
+      document.getElementById('lbl-cat-ar').textContent = t('lblCatAr');
+      document.getElementById('lbl-cat-en').textContent = t('lblCatEn');
+      document.getElementById('lbl-cat-icon').textContent = t('lblCatIcon');
+      document.getElementById('btn-save-cat').textContent = t('btnSaveCat');
+      document.getElementById('cat-list-title').textContent = t('catListTitle');
+      document.getElementById('admin-categories-list').innerHTML = state.categories.map((c) => `
+        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <div class="flex items-center gap-2"><span class="text-2xl">${c.icon}</span><div><p class="text-sm font-black">${c.ar}</p><p class="text-xs text-slate-500">${c.en}</p></div></div>
+          <div class="flex gap-1"><button type="button" onclick="editCategory('${c.id}')" class="px-2 py-1 rounded bg-white border">✏️</button><button type="button" onclick="deleteCategory('${c.id}')" class="px-2 py-1 rounded bg-red-50 text-brandRed">🗑️</button></div>
+        </div>`).join('');
+    }
+    function saveCategoryFromForm(e) {
+      e.preventDefault();
+      const editId = document.getElementById('cat-edit-id').value.trim();
+      const ar = document.getElementById('cat-ar').value.trim(), en = document.getElementById('cat-en').value.trim(), icon = document.getElementById('cat-icon').value.trim() || '📦';
+      if (editId) { const c = state.categories.find((x) => x.id === editId); if (c) { c.ar = ar; c.en = en; c.icon = icon; fsSet('categories', c.id, c); } }
+      else { const nc = { id: `cat-${Date.now()}`, ar, en, icon }; state.categories.push(nc); fsSet('categories', nc.id, nc); }
+      persist(); resetCategoryForm(); renderAll(); showToast(t('toastSaved'));
+    }
+    function editCategory(id) { const c = state.categories.find((x) => x.id === id); if (!c) return; document.getElementById('cat-edit-id').value = c.id; document.getElementById('cat-ar').value = c.ar; document.getElementById('cat-en').value = c.en; document.getElementById('cat-icon').value = c.icon; }
+    function resetCategoryForm() { document.getElementById('category-admin-form').reset(); document.getElementById('cat-edit-id').value = ''; document.getElementById('cat-icon').value = '🛒'; }
+    async function deleteCategory(id) { if (!(await askConfirm(t('confirmDeleteCat')))) return; state.categories = state.categories.filter((c) => c.id !== id); persist(); fsDelete('categories', id); renderAll(); showToast(t('toastSaved')); }
+
+    /* BUNDLES & OFFERS TAB */
+    function renderAdminBundlesAndOffers() {
+      document.getElementById('bundle-form-title').textContent = t('bundleFormTitle');
+      document.getElementById('btn-reset-bundle-form').textContent = t('resetFormBtn');
+      document.getElementById('lbl-b-name-ar').textContent = t('lblBNameAr');
+      document.getElementById('lbl-b-name-en').textContent = t('lblBNameEn');
+      document.getElementById('lbl-b-price-usd').textContent = t('lblBPriceUsd');
+      document.getElementById('lbl-b-emoji').textContent = t('lblBEmoji');
+      document.getElementById('lbl-b-select-prods').textContent = t('lblBSelectProds');
+      document.getElementById('lbl-b-active').textContent = t('lblBActive');
+      document.getElementById('btn-save-bundle').textContent = t('btnSaveBundle');
+      document.getElementById('bundle-list-title').textContent = t('bundleListTitle');
+
+      const checked = Array.from(document.querySelectorAll('.bundle-prod-chk:checked')).map((el) => el.value);
+      document.getElementById('bundle-product-checkboxes').innerHTML = state.products.map((p) => `
+        <label class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-2 cursor-pointer text-xs font-bold">
+          <input type="checkbox" value="${p.id}" class="bundle-prod-chk w-4 h-4 accent-brandGreen" ${checked.includes(p.id) ? 'checked' : ''} />
+          <span class="truncate">${p.emoji || '🛒'} ${state.lang === 'ar' ? p.nameAr : p.nameEn}</span>
+        </label>`).join('');
+
+      document.getElementById('admin-bundles-list').innerHTML = state.bundles.map((b) => `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <div><p class="text-sm font-black">${b.emoji || '🎁'} ${state.lang === 'ar' ? b.nameAr : b.nameEn}</p><p class="text-xs font-bold text-brandRed">$${Number(b.priceUSD).toFixed(2)}</p></div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="toggleBundleActive('${b.id}')" class="px-3 py-1 rounded-xl text-xs font-extrabold ${b.active ? 'bg-green-100 text-brandGreenDark' : 'bg-slate-200 text-slate-500'}">${b.active ? t('activeLabel') : t('pausedLabel')}</button>
+            <button type="button" onclick="editBundle('${b.id}')" class="px-2 py-1 rounded bg-white border text-xs">✏️</button>
+            <button type="button" onclick="deleteBundle('${b.id}')" class="px-2 py-1 rounded bg-red-50 text-brandRed text-xs">🗑️</button>
+          </div>
+        </div>`).join('');
+
+      document.getElementById('offer-form-title').textContent = t('offerFormTitle');
+      document.getElementById('lbl-offer-prod').textContent = t('lblOfferProd');
+      document.getElementById('lbl-offer-pct').textContent = t('lblOfferPct');
+      document.getElementById('btn-apply-offer').textContent = t('btnApplyOffer');
+      document.getElementById('offer-list-title').textContent = t('offerListTitle');
+      document.getElementById('offer-prod-select').innerHTML = state.products.map((p) => `<option value="${p.id}">${p.emoji || '🛒'} ${state.lang === 'ar' ? p.nameAr : p.nameEn}</option>`).join('');
+
+      const activeOffers = state.products.filter((p) => Number(p.discountPercent || 0) > 0);
+      document.getElementById('admin-offers-list').innerHTML = activeOffers.length === 0 ? `<p class="text-xs text-slate-400 text-center py-3">${t('noOffersActive')}</p>` : activeOffers.map((p) => `
+        <div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl p-3">
+          <p class="text-xs font-black">${state.lang === 'ar' ? p.nameAr : p.nameEn} <span class="bg-brandRed text-white text-[10px] px-2 py-0.5 rounded-full">-${p.discountPercent}%</span></p>
+          <button type="button" onclick="removeProductOffer('${p.id}')" class="px-3 py-1 rounded-xl bg-white border border-red-200 text-brandRed text-xs font-extrabold">${t('removeOfferBtn')}</button>
+        </div>`).join('');
+    }
+    function saveBundleFromForm(e) {
+      e.preventDefault();
+      const ids = Array.from(document.querySelectorAll('.bundle-prod-chk:checked')).map((el) => el.value);
+      if (ids.length === 0) { showToast(t('toastSelectBundleProd'), 'error'); return; }
+      const editId = document.getElementById('b-edit-id').value.trim();
+      const data = { nameAr: document.getElementById('b-name-ar').value.trim(), nameEn: document.getElementById('b-name-en').value.trim(), priceUSD: Number(document.getElementById('b-price-usd').value) || 5, emoji: document.getElementById('b-emoji').value.trim() || '🎁', productIds: ids, active: document.getElementById('b-active').checked };
+      if (editId) { const idx = state.bundles.findIndex((b) => b.id === editId); if (idx !== -1) { state.bundles[idx] = { ...state.bundles[idx], ...data }; fsSet('bundles', editId, state.bundles[idx]); } }
+      else { const nb = { id: `b-${Date.now()}`, ...data }; state.bundles.unshift(nb); fsSet('bundles', nb.id, nb); }
+      persist(); resetBundleForm(); renderAll(); showToast(t('toastSaved'));
+    }
+    function editBundle(id) { const b = state.bundles.find((x) => x.id === id); if (!b) return; document.getElementById('b-edit-id').value = b.id; document.getElementById('b-name-ar').value = b.nameAr; document.getElementById('b-name-en').value = b.nameEn; document.getElementById('b-price-usd').value = b.priceUSD; document.getElementById('b-emoji').value = b.emoji || '🎁'; document.getElementById('b-active').checked = !!b.active; document.querySelectorAll('.bundle-prod-chk').forEach((chk) => { chk.checked = (b.productIds || []).includes(chk.value); }); }
+    function resetBundleForm() { document.getElementById('bundle-admin-form').reset(); document.getElementById('b-edit-id').value = ''; document.getElementById('b-emoji').value = '🎁'; document.querySelectorAll('.bundle-prod-chk').forEach((c) => { c.checked = false; }); }
+    function toggleBundleActive(id) { const b = state.bundles.find((x) => x.id === id); if (!b) return; b.active = !b.active; persist(); fsSet('bundles', b.id, { active: b.active }); renderAll(); }
+    async function deleteBundle(id) { if (!(await askConfirm(t('confirmDeleteBundle')))) return; state.bundles = state.bundles.filter((b) => b.id !== id); persist(); fsDelete('bundles', id); renderAll(); showToast(t('toastSaved')); }
+    function applyProductOffer(e) { e.preventDefault(); const p = state.products.find((x) => x.id === document.getElementById('offer-prod-select').value); if (!p) return; p.discountPercent = Number(document.getElementById('offer-pct-input').value) || 0; persist(); fsSet('products', p.id, { discountPercent: p.discountPercent }); renderAll(); showToast(t('toastSaved')); }
+    function removeProductOffer(id) { const p = state.products.find((x) => x.id === id); if (!p) return; p.discountPercent = 0; persist(); fsSet('products', p.id, { discountPercent: 0 }); renderAll(); showToast(t('toastSaved')); }
+
+    /* ADS TAB */
+    function renderAdminAds() {
+      document.getElementById('ad-form-title').textContent = t('adFormTitle');
+      document.getElementById('lbl-ad-advertiser').textContent = t('lblAdAdvertiser');
+      document.getElementById('lbl-ad-type').textContent = t('lblAdType');
+      document.getElementById('lbl-ad-media').textContent = t('lblAdMedia');
+      document.getElementById('lbl-ad-upload').textContent = t('lblAdUpload');
+      document.getElementById('lbl-ad-link').textContent = t('lblAdLink');
+      document.getElementById('btn-save-ad').textContent = t('btnSaveAd');
+      document.getElementById('ad-list-title').textContent = t('adListTitle');
+      document.getElementById('ad-list-count').textContent = `(${state.ads.length})`;
+      document.getElementById('admin-ads-list').innerHTML = state.ads.length === 0 ? `<p class="text-xs text-slate-400 text-center py-4">${t('adNoAds')}</p>` : state.ads.map((ad) => `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <div><p class="text-xs sm:text-sm font-black">${ad.advertiser}</p><p class="text-[11px] font-bold text-amber-800">👆 ${ad.clicks || 0} ${t('adClicksLabel')}</p></div>
+          <div class="flex gap-1.5">
+            <button type="button" onclick="toggleAdActive('${ad.id}')" class="px-3 py-1 rounded-xl text-xs font-extrabold ${ad.active ? 'bg-green-100 text-brandGreenDark' : 'bg-slate-200 text-slate-500'}">${ad.active ? t('activeLabel') : t('pausedLabel')}</button>
+            <button type="button" onclick="deleteSponsoredAd('${ad.id}')" class="px-2.5 py-1 rounded-xl bg-red-50 text-brandRed text-xs">🗑️</button>
+          </div>
+        </div>`).join('');
+    }
+    function handleAdFileUpload(e) {
+      const file = e.target.files && e.target.files[0]; if (!file) return;
+      const st = document.getElementById('ad-upload-status');
+      if (file.type.startsWith('video/')) {
+        document.getElementById('ad-type').value = 'video';
+        state.uploadedAdMediaData = URL.createObjectURL(file);
+        st.textContent = `${t('adUploadReady')} (${file.name})`; st.classList.remove('hidden');
+      } else {
+        document.getElementById('ad-type').value = 'image';
+        const r = new FileReader();
+        r.onload = (ev) => { state.uploadedAdMediaData = ev.target.result; st.textContent = `${t('adUploadReady')} (${file.name})`; st.classList.remove('hidden'); };
+        r.readAsDataURL(file);
+      }
+    }
+    function createSponsoredAd(e) {
+      e.preventDefault();
+      const mediaUrl = document.getElementById('ad-media-url').value.trim() || state.uploadedAdMediaData;
+      if (!mediaUrl) { showToast(t('adNeedMedia'), 'error'); return; }
+      const na = { id: `ad-${Date.now()}`, advertiser: document.getElementById('ad-advertiser').value.trim(), mediaType: document.getElementById('ad-type').value, mediaUrl, targetUrl: document.getElementById('ad-target-url').value.trim(), active: true, clicks: 0 };
+      state.ads.unshift(na); persist(); fsSet('ads', na.id, na);
+      document.getElementById('ad-admin-form').reset(); state.uploadedAdMediaData = ''; document.getElementById('ad-upload-status').classList.add('hidden');
+      renderAll(); showToast(t('toastSaved'));
+    }
+    function toggleAdActive(id) { const ad = state.ads.find((x) => x.id === id); if (!ad) return; ad.active = !ad.active; persist(); fsSet('ads', ad.id, { active: ad.active }); renderAll(); }
+    async function deleteSponsoredAd(id) { if (!(await askConfirm(t('confirmDeleteAd')))) return; state.ads = state.ads.filter((a) => a.id !== id); persist(); fsDelete('ads', id); renderAll(); showToast(t('toastSaved')); }
+
+    /* SETTINGS, PROMOS & QR */
+    function renderAdminSettings() {
+      document.getElementById('settings-heading').textContent = t('settingsHeading');
+      document.getElementById('adm-lbl-rate').textContent = t('admRateLbl');
+      document.getElementById('adm-hint-rate').textContent = t('admRateHint');
+      document.getElementById('adm-rate').value = state.settings.exchangeRate;
+      document.getElementById('adm-lbl-delivery').textContent = t('admDeliveryLbl');
+      document.getElementById('adm-hint-delivery').textContent = t('admDeliveryHint');
+      document.getElementById('adm-delivery').value = state.settings.deliveryFeeSYP;
+      document.getElementById('adm-lbl-whatsapp').textContent = t('admWaLbl');
+      document.getElementById('adm-hint-whatsapp').textContent = t('admWaHint');
+      document.getElementById('adm-whatsapp').value = state.settings.whatsapp;
+      document.getElementById('adm-lbl-pin').textContent = t('admPinLbl');
+      document.getElementById('adm-hint-pin').textContent = t('admPinHint');
+      document.getElementById('adm-pin').value = state.settings.adminPin || '1234';
+      document.getElementById('adm-btn-save').textContent = t('admBtnSave');
+      document.getElementById('adm-btn-reset').textContent = t('admBtnReset');
+      document.getElementById('promo-create-title').textContent = t('promoCreateTitle');
+      document.getElementById('lbl-new-promo-code').textContent = t('lblNewPromoCode');
+      document.getElementById('lbl-new-promo-pct').textContent = t('lblNewPromoPct');
+      document.getElementById('btn-create-promo').textContent = t('btnCreatePromo');
+
+      document.getElementById('admin-promos-list').innerHTML = state.promos.map((pr) => `
+        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <div><span class="font-mono font-black text-sm bg-brandYellowSoft px-2.5 py-1 rounded-lg border border-yellow-300">${pr.code}</span> <span class="text-xs font-extrabold text-brandGreen">-${pr.discountPercent}%</span></div>
+          <div class="flex gap-1.5">
+            <button type="button" onclick="togglePromoActive('${pr.id}')" class="px-3 py-1 rounded-xl text-xs font-extrabold ${pr.active ? 'bg-green-100 text-brandGreenDark' : 'bg-slate-200 text-slate-500'}">${pr.active ? t('activeLabel') : t('pausedLabel')}</button>
+            <button type="button" onclick="deletePromo('${pr.id}')" class="px-2.5 py-1 rounded-xl bg-red-50 text-brandRed text-xs">🗑️</button>
+          </div>
+        </div>`).join('');
+
+      document.getElementById('qr-card-sub').textContent = t('qrCardSub');
+      document.getElementById('qr-tagline').textContent = t('qrTagline');
+      document.getElementById('qr-footer-note').textContent = t('qrFooterNote');
+      document.getElementById('qr-print-btn').textContent = t('qrPrintBtn');
+      renderQRSVG();
+    }
+
+    function saveAdminSettings() {
+      state.settings = {
+        exchangeRate: Number(document.getElementById('adm-rate').value) || 150,
+        deliveryFeeSYP: Math.max(0, Number(document.getElementById('adm-delivery').value) || 0),
+        whatsapp: document.getElementById('adm-whatsapp').value.trim() || '963945810376',
+        adminPin: document.getElementById('adm-pin').value.trim() || '1234',
+      };
+      persist(); fsSaveSettings(); renderAll(); showToast(t('toastSaved'));
+    }
+    function createPromoCode(e) {
+      e.preventDefault();
+      const code = document.getElementById('new-promo-code').value.trim().toUpperCase(); if (!code) return;
+      state.promos.unshift({ id: `pr-${Date.now()}`, code, discountPercent: Number(document.getElementById('new-promo-pct').value) || 10, active: true });
+      persist(); fsSaveSettings(); document.getElementById('new-promo-code').value = ''; renderAdminSettings(); showToast(t('toastSaved'));
+    }
+    function togglePromoActive(id) { const p = state.promos.find((x) => x.id === id); if (!p) return; p.active = !p.active; persist(); fsSaveSettings(); renderAdminSettings(); }
+    function deletePromo(id) { state.promos = state.promos.filter((p) => p.id !== id); persist(); fsSaveSettings(); renderAdminSettings(); showToast(t('toastSaved')); }
+    async function confirmResetDemoData() {
+      if (!(await askConfirm(t('confirmResetData')))) return;
+      const fresh = buildDefaultData();
+      state.categories = fresh.categories; state.products = fresh.products; state.bundles = fresh.bundles;
+      state.promos = fresh.promos; state.ads = fresh.ads; state.orders = []; state.settings = fresh.settings; state.cart = {};
+      persist(); renderAll(); showToast(t('toastSaved'));
+    }
+    function renderQRSVG() {
+      const c = document.getElementById('qr-svg-container');
+      const size = 21;
+      const isF = (r, col) => (r < 7 && col < 7) || (r < 7 && col >= size - 7) || (r >= size - 7 && col < 7);
+      const drawF = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" rx="1" fill="#0F172A"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#FFF"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="#D91E18"/>`;
+      let rects = drawF(0, 0) + drawF(size - 7, 0) + drawF(0, size - 7);
+      for (let r = 0; r < size; r++) {
+        for (let col = 0; col < size; col++) {
+          if (isF(r, col)) continue;
+          if (((r * 13 + col * 7) % 3) === 0) rects += `<rect x="${col}" y="${r}" width="0.9" height="0.9" fill="#0F172A"/>`;
+        }
+      }
+      c.innerHTML = `<svg viewBox="-1 -1 ${size + 2} ${size + 2}" class="w-full h-full"><rect x="-1" y="-1" width="${size + 2}" height="${size + 2}" fill="#FFF"/>${rects}</svg>`;
+    }
+    function printQRCard() { document.body.classList.remove('print-invoice'); document.body.classList.add('print-qr'); window.print(); }
+
+    /* 11. INSTANT BOOTSTRAP */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+      startRealtimeSync();
+    });
+  </script>
+</body>
+</html>
+```
